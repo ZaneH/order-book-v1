@@ -1,0 +1,2 @@
+* Order Book V1
+See [[./docs/00_COURSEWORK.org][00_COURSEWORK.org]] for the project specs. Based on [[https://github.com/alissawu/miniex][alissawu/miniex]].

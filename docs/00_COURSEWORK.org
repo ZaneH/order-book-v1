@@ -1,0 +1,266 @@
+#+title: CLOB coursework (C++ / replayable order book)
+#+options: toc:t
+
+* overview
+Goal: build a small but serious CLOB core in C++ with a replay log. Something you can run, replay, and test.
+
+Assumptions:
+- Single-threaded engine (for now)
+- Integer ticks for price
+- Integer qty
+- Price-time priority with engine-assigned arrival sequence
+- No external dependencies required to start (you can add one later if you want)
+
+You will end up with:
+- an OrderBook library
+- a tiny CLI driver
+- a replay log format + replayer
+- a test suite that proves determinism
+
+This document was created with generative AI; it is based on [[https://github.com/alissawu/miniex][alissawu/miniex]].
+
+* part 0: bootstrap and habits
+** tasks
+- [ ] Create repo layout:
+  - /include (public headers)
+  - /src (implementation)
+  - /tests
+  - /tools (replayer, log dumper)
+  - /examples (tiny CLI)
+- [ ] CMake builds:
+  - one library target (orderbook)
+  - one executable target (clob_cli)
+  - tests target
+- [ ] Pick compile flags and stick to them:
+  - warnings on, treat warnings as errors in CI
+  - debug build uses sanitizers (ASAN/UBSAN)
+- [ ] Add clang-format config (even a minimal one) and actually run it.
+- [ ] Add a README with the one command to build and run.
+
+** deliverable
+- You can build from a clean checkout and run:
+  - clob_cli --help
+  - tests (even if there is only one trivial test)
+
+* part 1: vocabulary + paper trading + rules
+This is where you prevent future "why does cancel break everything" pain.
+
+** tasks
+- [ ] Write a short glossary in a NOTES.org (or in this file):
+  - side, tick, level, FIFO, best bid/ask, spread, cross
+- [ ] Do at least 3 hand-sim scenarios in your own words.
+  - include one that crosses multiple levels
+  - include one FIFO within a level
+  - include one cancel case
+- [ ] Decide policies up front (write them down):
+  - engine assigns OrderId (caller does not supply it)
+  - engine assigns arrival_seq (no timestamp in the API)
+  - invalid inputs are rejected with a status code (no partial side effects)
+  - market orders never rest; they still get an id for trade attribution
+  - time-in-force: GTC now, IOC soon
+
+** deliverable
+- A simple "rules" section you can point to when you implement matching:
+  - trade price is maker price
+  - FIFO inside a level
+  - no crossed book after any operation
+  - zero-qty orders do not exist
+
+* part 2: API sketch (headers only)
+You can change your mind later, but you need a spine.
+
+** tasks
+- [ ] Define value types (public):
+  - Side (bid/ask)
+  - Price (ticks) as a strong type or at least a named alias
+  - Qty
+  - OrderId, UserId (UserId can be optional at first)
+  - Trade record (maker_id, taker_id, price, qty, match_id)
+- [ ] Define results and status codes:
+  - RejectReason (bad price, bad qty, overflow, empty book for market, etc.)
+  - AddResult { order_id, trades, remaining_qty, status }
+- [ ] Define the OrderBook verbs:
+  - add_limit(user, side, price, qty, tif=GTC|IOC)
+  - add_market(user, side, qty)
+  - cancel(order_id)
+  - best_bid(), best_ask()
+  - depth_at(side, price) (testing helper, worth it)
+- [ ] Write postconditions in comments:
+  - after add_*: no crossed book, FIFO preserved, empty levels removed
+  - cancel returns true only if the order was active at call time
+
+** deliverable
+- Public headers compile on their own.
+- No implementation yet. You should be able to read the headers and know what the engine does.
+
+* part 3: data model (still mostly on paper)
+Classic baseline is fine. Make it correct first.
+
+** tasks
+- [ ] Choose baseline containers:
+  - side index: std::map<Price, Level>
+    - asks: begin() is best
+    - bids: rbegin() is best
+  - level queue: std::list<OrderNode> (stable iterators)
+  - id index: std::unordered_map<OrderId, Handle>
+- [ ] Define Handle precisely:
+  - side
+  - iterator to the level in the map
+  - iterator to the order node in the list
+- [ ] Define Level fields:
+  - aggregate_qty
+  - orders list
+- [ ] Write the invariants you will assert in debug builds:
+  - aggregate_qty equals sum of order qtys in that level
+  - every id in id_index points to a live node
+  - no level exists with empty orders
+  - best_bid < best_ask if both exist
+
+** deliverable
+- A short design note explaining how cancel stays O(1).
+- A tiny "debug verify()" function signature you can call in tests later.
+
+* part 4: matching core (limit orders, GTC)
+Now you write real code, but keep it small.
+
+** tasks
+- [ ] Implement add_limit for non-crossing case:
+  - create/find level
+  - push_back into FIFO
+  - update aggregate
+  - insert handle in id_index
+- [ ] Implement add_limit for crossing case:
+  - while incoming qty > 0 and cross exists:
+    - look at best level on opposite side
+    - match FIFO orders within that level
+    - emit Trade records
+    - remove filled maker orders and their handles
+    - erase empty levels
+  - if remainder > 0: rest it (GTC)
+- [ ] Implement "match_id" monotonic counter:
+  - each incoming order gets a match_id (or each trade gets one, your choice)
+  - keep it deterministic
+- [ ] Add debug verification in critical points (behind a compile-time flag if you want).
+
+** deliverable
+- Tests:
+  - crossing single level
+  - crossing multiple levels
+  - FIFO at a level (two orders, partial fill)
+- A CLI command that can run a hardcoded scenario and print trades.
+
+* part 5: cancel (and the nasty iterator bugs)
+Cancel is where the handle design earns its keep.
+
+** tasks
+- [ ] Implement cancel(order_id):
+  - lookup id_index; if missing return false
+  - erase from list using iterator
+  - subtract qty from aggregate
+  - erase handle from id_index
+  - if level empty: erase level from map
+- [ ] Add tests:
+  - cancel active order succeeds
+  - cancel unknown id fails
+  - cancel order after it has fully traded fails
+  - cancel removes level when it becomes empty
+
+** deliverable
+- cancel is boring. That’s the point. It should just work.
+
+* part 6: market orders + IOC
+Market and IOC are similar mechanically: consume liquidity, maybe leave nothing.
+
+** tasks
+- [ ] Implement add_market(user, side, qty):
+  - match against opposite side starting at best
+  - never insert into id_index
+  - return trades + leftover qty (if book empties)
+- [ ] Implement IOC for add_limit:
+  - same matching loop as GTC
+  - if remainder > 0: discard it (do not rest it)
+- [ ] Add tests:
+  - market walks multiple levels
+  - IOC partially fills then cancels remainder
+  - market on empty book returns status "no liquidity" (no state change)
+
+** deliverable
+- You can now drive the engine with a realistic sequence:
+  add some asks, slam a market buy, then cancel a remaining bid.
+
+* part 7: replay log (the "this is real" part)
+This is the part people don’t do. Do it.
+
+Decide early: binary or text.
+- Text (JSON lines / simple CSV-like) is easiest to debug.
+- Binary is faster and cleaner, but costs more time.
+
+Start with text. You can always add binary later.
+
+** tasks
+- [ ] Define an event schema:
+  - event_type: add_limit / add_market / cancel
+  - fields: user_id, side, price, qty, tif, order_id (for cancel), event_seq
+- [ ] The engine writes events to a log as it processes them:
+  - append-only
+  - flush policy: per event or buffered (start simple: per event)
+- [ ] Implement a replayer tool:
+  - reads the log
+  - feeds events back into a fresh OrderBook
+  - prints final top-of-book and a state hash
+- [ ] Implement state hashing:
+  - deterministic hash over all active orders in book
+  - include side, price, and FIFO order of ids + qty
+  - do not include memory addresses or container iteration artifacts that can vary
+
+** deliverable
+- A test that:
+  - runs a sequence, writes a log
+  - replays the log into a fresh book
+  - final state hash matches
+  - optionally: trades emitted match too
+
+* part 8: tooling polish (small, useful)
+This makes the repo pleasant to show someone.
+
+** tasks
+- [ ] Add "dump book" debug output:
+  - print levels and FIFO order ids
+- [ ] Add a generator that creates random but valid event sequences:
+  - stable seed
+  - can write a log
+- [ ] Add a fuzzer-ish invariant test:
+  - run N random operations
+  - after each op, call verify()
+- [ ] Add a benchmark harness (even if crude):
+  - ops/sec for add_limit non-crossing
+  - ops/sec for cancel
+  - ops/sec for a crossing workload
+
+** deliverable
+- One command to run:
+  - deterministic random scenario generation
+  - replay
+  - verify hash matches
+
+* part 9: optional upgrades (only if you still care)
+These are good, but not required to have a legit project.
+
+** ideas
+- Replace std::list with an intrusive list or a packed structure
+- Switch log to binary with a version header
+- Add "replace" semantics (cancel + add wrapper with policy)
+- Add simple risk limits (max qty per order, max open orders per user)
+- Add snapshot + log (like real systems):
+  - snapshot book state every N events
+  - replay from snapshot + tail log
+
+* checkpoints (so you can tell if you're on track)
+- part 2 done: you can explain the API without opening source files
+- part 4 done: matching works and tests cover the basic crossing cases
+- part 7 done: replay proves determinism (this is the big one)
+
+* notes for your future self
+- Keep timestamps out of priority logic. Arrival_seq is enough.
+- Prefer "dumb and obvious" over clever templates.
+- If you change a policy, update the tests first. The tests are the spec now.
