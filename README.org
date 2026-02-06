@@ -5,9 +5,9 @@ See [[./docs/00_COURSEWORK.org][00_COURSEWORK.org]] for the project specs. Based
 
 #+begin_src sh
   $ mkdir build
-  $ cmake -S . -B build
+  $ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release # or Debug
   $ cmake --build build
   $ cd build && make
-  $ make test # Run tests
+  $ ctest # Run tests (add --verbose for more detail)
   $ ./clob_cli # Start orderbook
 #+end_src
