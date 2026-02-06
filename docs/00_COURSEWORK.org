@@ -21,17 +21,17 @@ This document was created with generative AI; it is based on [[https://github.co
 
 * part 0: bootstrap and habits
 ** tasks
-- [ ] Create repo layout:
+- [X] Create repo layout:
   - /include (public headers)
   - /src (implementation)
   - /tests
   - /tools (replayer, log dumper)
   - /examples (tiny CLI)
-- [ ] CMake builds:
+- [X] CMake builds:
   - one library target (orderbook)
   - one executable target (clob_cli)
-  - tests target
-- [ ] Pick compile flags and stick to them:
+  - tests target (orderbook_test + GTest)
+- [X] Pick compile flags and stick to them:
   - warnings on, treat warnings as errors in CI
   - debug build uses sanitizers (ASAN/UBSAN)
 - [ ] Add clang-format config (even a minimal one) and actually run it.
