@@ -1,2 +1,13 @@
 * Order Book V1
 See [[./docs/00_COURSEWORK.org][00_COURSEWORK.org]] for the project specs. Based on [[https://github.com/alissawu/miniex][alissawu/miniex]].
+
+** Build and Run
+
+#+begin_src sh
+  $ mkdir build
+  $ cmake -S . -B build
+  $ cmake --build build
+  $ cd build && make
+  $ make test # Run tests
+  $ ./clob_cli # Start orderbook
+#+end_src
