@@ -1,0 +1,12 @@
+* Glossary
+- side: the trade type (buy or sell)
+- tick: the smallest unit of upwards/downwards movement of an asset
+  - Example: In USD, $1.00 has a tick size of $0.01
+- level: a collection of orders at a given tick value, crucial for displaying market depth (L2)
+- FIFO: first-in-first-out
+- best bid/ask:
+  - bid: the highest price a buyer is willing to pay for an asset
+  - ask: the lowest price a seller is willing to accept for an asset
+  - Think "highest bidder, lowest asking price"
+- spread: the difference between the best bid and best ask
+- cross: when the bid is greater than the asking price ("cross"), the engine can instantly match these trades

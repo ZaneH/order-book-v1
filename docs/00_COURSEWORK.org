@@ -46,7 +46,7 @@ This document was created with generative AI; it is based on [[https://github.co
 This is where you prevent future "why does cancel break everything" pain.
 
 ** tasks
-- [ ] Write a short glossary in a NOTES.org (or in this file):
+- [X] Write a short glossary in a NOTES.org (or in this file):
   - side, tick, level, FIFO, best bid/ask, spread, cross
 - [ ] Do at least 3 hand-sim scenarios in your own words.
   - include one that crosses multiple levels
