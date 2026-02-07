@@ -36,6 +36,7 @@ This document was created with generative AI; it is based on [[https://github.co
   - debug build uses sanitizers (ASAN/UBSAN)
 - [X] Add clang-format config (even a minimal one) and actually run it.
 - [X] Add a README with the one command to build and run.
+- [X] Document which C++ style guide you will use in the README
 
 ** deliverable
 - You can build from a clean checkout and run:

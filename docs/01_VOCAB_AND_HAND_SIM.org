@@ -12,10 +12,10 @@
 - cross: an incoming order "crosses" the best bid/ask price allowing the engine to immediately match
   - incoming bid_price >​= best_ask
   - incoming ask_price <​= best_bid
-- maker price: execution price of a trade, equal to the limit price of the resting order
+- maker price: execution price of a trade, equal to the limit price of the order resting in the order book
 - taker price: price of the incoming order, not necessarily the execution price
 
-* Hand-Simulation
+* Hand-Simulations
 ** one that crosses multiple levels
 
   #+begin_src
