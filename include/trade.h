@@ -3,10 +3,13 @@
 
 #include "types.h"
 
-struct TradeRecord {
+struct Trade {
   UserId maker_id_;
   UserId taker_id_;
   MatchId match_id_;
+
+  Quantity qty_;
+  Ticks price_;
 };
 
 #endif

@@ -4,6 +4,10 @@
 #include <cstdint>
 
 enum class OrderSide { kBuy = 0, kSell };
+enum class TimeInForce {
+  kGoodTillCancel = 0,
+  kImmediateOrCancel,
+};
 
 using Underlying = uint32_t;
 
@@ -30,6 +34,12 @@ struct Ticks {
 struct Quantity {
   Underlying v_;
   bool operator==(const Quantity& other) const = default;
+};
+
+enum class OrderStatus {
+  kAwaitingFill = 0,
+  kPartialFill,
+  kRejected,
 };
 
 #endif
