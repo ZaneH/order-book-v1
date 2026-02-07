@@ -1,5 +1,5 @@
-#ifndef TRADE_RECORD_H
-#define TRADE_RECORD_H
+#ifndef INCLUDE_TRADE_H_
+#define INCLUDE_TRADE_H_
 
 #include "types.h"
 

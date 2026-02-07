@@ -1,3 +1,6 @@
+#ifndef INCLUDE_ORDERBOOK_H_
+#define INCLUDE_ORDERBOOK_H_
+
 #include <optional>
 #include <vector>
 
@@ -36,3 +39,5 @@ class OrderBook {
 
   Quantity depth_at(OrderSide side, Ticks price);
 };
+
+#endif
