@@ -98,20 +98,20 @@ You can change your mind later, but you need a spine.
 Classic baseline is fine. Make it correct first.
 
 ** tasks
-- [ ] Choose baseline containers:
+- [X] Choose baseline containers:
   - side index: std::map<Price, Level>
     - asks: begin() is best
     - bids: rbegin() is best
   - level queue: std::list<OrderNode> (stable iterators)
   - id index: std::unordered_map<OrderId, Handle>
-- [ ] Define Handle precisely:
+- [X] Define Handle precisely:
   - side
   - iterator to the level in the map
   - iterator to the order node in the list
-- [ ] Define Level fields:
+- [X] Define Level fields:
   - aggregate_qty
   - orders list
-- [ ] Write the invariants you will assert in debug builds:
+- [X] Write the invariants you will assert in debug builds:
   - aggregate_qty equals sum of order qtys in that level
   - every id in id_index points to a live node
   - no level exists with empty orders

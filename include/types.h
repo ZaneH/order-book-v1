@@ -1,7 +1,9 @@
 #ifndef INCLUDE_TYPES_H_
 #define INCLUDE_TYPES_H_
 
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 
 enum class OrderSide { kBuy = 0, kSell };
 enum class TimeInForce {
@@ -11,32 +13,31 @@ enum class TimeInForce {
 
 using Underlying = uint32_t;
 
-struct OrderId {
-  Underlying v;
-  bool operator==(const OrderId& other) const = default;
+template <class Tag>
+struct StrongId {
+  Underlying v{};
+  bool operator==(const StrongId&) const = default;
 };
 
-struct MatchId {
-  Underlying v;
-  bool operator==(const MatchId& other) const = default;
+template <class Tag>
+struct StrongIdHash {
+  size_t operator()(const StrongId<Tag>& x) const noexcept {
+    return std::hash<Underlying>{}(x.v);
+  }
 };
 
-struct UserId {
-  Underlying v;
-  bool operator==(const UserId& other) const = default;
-};
+struct OrderIdTag {};
+struct MatchIdTag {};
+struct UserIdTag {};
+struct TicksTag {};
+struct QuantityTag {};
 
-struct Ticks {
-  Underlying v;
-  bool operator==(const Ticks& other) const = default;
-};
-
+using OrderId = StrongId<OrderIdTag>;
+using MatchId = StrongId<MatchIdTag>;
+using UserId = StrongId<UserIdTag>;
+using Ticks = StrongId<TicksTag>;
+using Quantity = StrongId<QuantityTag>;
 using Price = Ticks;
-
-struct Quantity {
-  Underlying v;
-  bool operator==(const Quantity& other) const = default;
-};
 
 enum class OrderStatus {
   kAwaitingFill = 0,
