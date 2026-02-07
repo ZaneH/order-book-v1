@@ -53,7 +53,7 @@ This is where you prevent future "why does cancel break everything" pain.
   - include one that crosses multiple levels
   - include one FIFO within a level
   - include one cancel case
-- [ ] Decide policies up front (write them down):
+- [X] Decide policies up front (write them down):
   - engine assigns OrderId (caller does not supply it)
   - engine assigns arrival_seq (no timestamp in the API)
   - invalid inputs are rejected with a status code (no partial side effects)
@@ -71,7 +71,7 @@ This is where you prevent future "why does cancel break everything" pain.
 You can change your mind later, but you need a spine.
 
 ** tasks
-- [ ] Define value types (public):
+- [X] Define value types (public):
   - Side (bid/ask)
   - Price (ticks) as a strong type or at least a named alias
   - Qty

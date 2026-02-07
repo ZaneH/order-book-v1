@@ -18,6 +18,9 @@ add_executable(clob_cli
 
 add_library(orderbook
   SHARED
+  include/types.h
+  include/order.h
+  include/trade_record.h
   src/orderbook.cpp
 )
 

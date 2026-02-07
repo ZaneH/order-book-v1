@@ -6,10 +6,9 @@ This project uses the [[https://google.github.io/styleguide/cppguide.html][Googl
 ** Build and Run
 
 #+begin_src sh
-  $ mkdir build
-  $ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release # or Debug
+  $ cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DCMAKE_BUILD_TYPE=Release # or Debug
   $ cmake --build build
-  $ cd build && make
+  $ cd build
   $ ctest # Run tests (add --verbose for more detail)
   $ ./clob_cli # Start orderbook
 #+end_src
