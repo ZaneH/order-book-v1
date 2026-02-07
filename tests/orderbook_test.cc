@@ -4,5 +4,5 @@
 
 TEST(Trade, Init) {
   Trade t = Trade();
-  EXPECT_EQ(t.qty_, 0);
+  EXPECT_EQ(t.qty_.v_, 0);
 }

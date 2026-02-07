@@ -13,15 +13,16 @@ set(PROJECT_NAME
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
 add_executable(clob_cli
-  src/main.cpp
+  src/main.cc
 )
 
 add_library(orderbook
   SHARED
   include/types.h
   include/order.h
-  include/trade_record.h
-  src/orderbook.cpp
+  include/trade.h
+  include/orderbook.h
+  src/orderbook.cc
 )
 
 include(FetchContent)
@@ -36,7 +37,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(orderbook_test
-  tests/orderbook_test.cpp
+  tests/orderbook_test.cc
 )
 
 target_link_libraries(orderbook_test

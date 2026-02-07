@@ -77,16 +77,16 @@ You can change your mind later, but you need a spine.
   - Qty
   - OrderId, UserId (UserId can be optional at first)
   - Trade record (maker_id, taker_id, price, qty, match_id)
-- [ ] Define results and status codes:
+- [X] Define results and status codes:
   - RejectReason (bad price, bad qty, overflow, empty book for market, etc.)
   - AddResult { order_id, trades, remaining_qty, status }
-- [ ] Define the OrderBook verbs:
+- [X] Define the OrderBook verbs:
   - add_limit(user, side, price, qty, tif=GTC|IOC)
   - add_market(user, side, qty)
   - cancel(order_id)
   - best_bid(), best_ask()
   - depth_at(side, price) (testing helper, worth it)
-- [ ] Write postconditions in comments:
+- [X] Write postconditions in comments:
   - after add_*: no crossed book, FIFO preserved, empty levels removed
   - cancel returns true only if the order was active at call time
 
