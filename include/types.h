@@ -12,27 +12,29 @@ enum class TimeInForce {
 using Underlying = uint32_t;
 
 struct OrderId {
-  Underlying v_;
+  Underlying v;
   bool operator==(const OrderId& other) const = default;
 };
 
 struct MatchId {
-  Underlying v_;
+  Underlying v;
   bool operator==(const MatchId& other) const = default;
 };
 
 struct UserId {
-  Underlying v_;
+  Underlying v;
   bool operator==(const UserId& other) const = default;
 };
 
 struct Ticks {
-  Underlying v_;
+  Underlying v;
   bool operator==(const Ticks& other) const = default;
 };
 
+using Price = Ticks;
+
 struct Quantity {
-  Underlying v_;
+  Underlying v;
   bool operator==(const Quantity& other) const = default;
 };
 

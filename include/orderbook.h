@@ -4,6 +4,7 @@
 #include <optional>
 #include <vector>
 
+#include "order.h"
 #include "trade.h"
 #include "types.h"
 
@@ -15,18 +16,19 @@ enum class RejectReason {
 };
 
 struct AddResult {
-  std::optional<RejectReason> error_;
+  std::optional<RejectReason> error;
 
-  OrderId order_id_;
-  OrderStatus status_;
-  std::vector<Trade> immediate_trades_;
-  Quantity remaining_qty_;
+  OrderId order_id;
+  OrderStatus status;
+  std::vector<Trade> immediate_trades;
+  Quantity remaining_qty;
+
 };
 
 class OrderBook {
  public:
   // Postconditions: FIFO preserved, empty levels removed, no crossed book
-  AddResult add_limit(UserId user_id, OrderSide side, Ticks price, Quantity qty,
+  AddResult add_limit(UserId user_id, OrderSide side, Price price, Quantity qty,
                       TimeInForce tif);
   // Postconditions: FIFO preserved, empty levels removed, no crossed book
   AddResult add_market(UserId user_id, OrderSide side, Quantity qty,
@@ -34,10 +36,12 @@ class OrderBook {
 
   bool cancel(OrderId order_id);
 
-  std::optional<Ticks> best_bid();
-  std::optional<Ticks> best_ask();
+  std::optional<Price> best_bid();
+  std::optional<Price> best_ask();
 
-  Quantity depth_at(OrderSide side, Ticks price);
+  Quantity depth_at(OrderSide side, Price price);
+
+
 };
 
 #endif

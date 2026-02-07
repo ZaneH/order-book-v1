@@ -4,12 +4,12 @@
 #include "types.h"
 
 struct Order {
-  OrderId id_;
-  UserId creator_id_;
-  OrderSide side_;
+  OrderId id;
+  UserId creator_id;
+  OrderSide side;
 
-  Quantity qty_;
-  Ticks price_;
+  Quantity qty;
+  Price price;
 };
 
 #endif

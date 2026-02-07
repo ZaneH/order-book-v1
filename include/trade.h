@@ -4,12 +4,12 @@
 #include "types.h"
 
 struct Trade {
-  UserId maker_id_;
-  UserId taker_id_;
-  MatchId match_id_;
+  UserId maker_id;
+  UserId taker_id;
+  MatchId match_id;
 
-  Quantity qty_;
-  Ticks price_;
+  Quantity qty;
+  Price price;
 };
 
 #endif
