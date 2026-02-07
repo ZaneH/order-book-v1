@@ -17,7 +17,6 @@ template <class Tag>
 struct StrongId {
   Underlying v{};
   friend constexpr bool operator==(StrongId, StrongId) = default;
-  friend constexpr auto operator<=>(StrongId, StrongId) = default;
 };
 
 template <class Tag>
@@ -30,14 +29,33 @@ struct StrongIdHash {
 struct OrderIdTag {};
 struct MatchIdTag {};
 struct UserIdTag {};
-struct TicksTag {};
-struct QuantityTag {};
 
 using OrderId = StrongId<OrderIdTag>;
 using MatchId = StrongId<MatchIdTag>;
 using UserId = StrongId<UserIdTag>;
-using Ticks = StrongId<TicksTag>;
-using Quantity = StrongId<QuantityTag>;
+
+template <class Tag>
+struct StrongNum {
+  Underlying v{};
+
+  friend constexpr StrongNum operator+(StrongNum a, StrongNum b) {
+    return a.v + b.v;
+  }
+
+  friend constexpr StrongNum operator+=(StrongNum& a, StrongNum b) {
+    a.v = a.v + b.v;
+    return a;
+  }
+
+  friend constexpr bool operator==(StrongNum, StrongNum) = default;
+  friend constexpr auto operator<=>(StrongNum, StrongNum) = default;
+};
+
+struct TicksTag {};
+struct QuantityTag {};
+
+using Quantity = StrongNum<QuantityTag>;
+using Ticks = StrongNum<TicksTag>;
 using Price = Ticks;
 
 enum class OrderStatus {

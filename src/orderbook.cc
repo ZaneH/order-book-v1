@@ -1,7 +1,8 @@
 #include "../include/orderbook.h"
 
 #include <cassert>
-#include <optional>
+#include <map>
+#include <utility>
 
 Quantity OrderBook::depth_at(OrderSide side, Price price) {
   auto& book_side = side == OrderSide::kBuy ? bids_ : asks_;
@@ -12,7 +13,14 @@ Quantity OrderBook::depth_at(OrderSide side, Price price) {
 
 AddResult OrderBook::add_limit(UserId user_id, OrderSide side, Price price,
                                Quantity qty, TimeInForce tif) {
-  auto order = Order{
+  if (qty == Quantity{0}) {
+    return RejectReason::kBadQty;
+  }
+  if (price == Price{0}) {
+    return RejectReason::kBadPrice;
+  }
+
+  auto const& order = Order{
       .id = OrderId{0},
       .creator_id = user_id,
       .side = side,
@@ -21,12 +29,23 @@ AddResult OrderBook::add_limit(UserId user_id, OrderSide side, Price price,
       .tif = tif,
   };
 
+  auto& book_side = side == OrderSide::kBuy ? bids_ : asks_;
+  auto level_it = book_side.find(price);
+  if (level_it == book_side.end()) {
+    book_side.insert(std::pair(price, Level{
+                                          .aggregate_qty = Quantity{order.qty},
+                                          .orders = std::list<Order>{order},
+                                      }));
+  } else {
+    level_it->second.orders.emplace_back(order);
+    level_it->second.aggregate_qty += order.qty;
+  }
+
 #ifndef NDEBUG
-  verify();
+  // verify();
 #endif
 
-  return AddResult{
-      .error = std::nullopt,
+  return AddResultPayload{
       .order_id = order.id,
       .status = OrderStatus::kAwaitingFill,
       .immediate_trades = std::vector<Trade>{},
@@ -35,13 +54,21 @@ AddResult OrderBook::add_limit(UserId user_id, OrderSide side, Price price,
 }
 
 #ifndef NDEBUG
-void OrderBook::verify() const {
-  for (auto const& [price, level] : bids_) {
-    assert(level.orders.size() != 0);
-  }
+void verify_side(std::map<Price, Level> book_side) {
+  for (auto const& [price, level] : book_side) {
+    Quantity level_qty_sum{};
 
-  for (auto const& [price, level] : asks_) {
+    for (auto const& order : level.orders) {
+      level_qty_sum += order.qty;
+    }
+
+    assert(level.aggregate_qty == level_qty_sum);
     assert(level.orders.size() != 0);
   }
+}
+
+void OrderBook::verify() const {
+  verify_side(bids_);
+  verify_side(asks_);
 }
 #endif

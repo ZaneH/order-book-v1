@@ -4,7 +4,9 @@
 #include <list>
 #include <map>
 #include <optional>
+#include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "order.h"
@@ -18,14 +20,14 @@ enum class RejectReason {
   kEmptyBookForMarket,
 };
 
-struct AddResult {
-  std::optional<RejectReason> error;
-
+struct AddResultPayload {
   OrderId order_id;
   OrderStatus status;
   std::vector<Trade> immediate_trades;
   Quantity remaining_qty;
 };
+
+using AddResult = std::variant<RejectReason, AddResultPayload>;
 
 struct Level {
   Quantity aggregate_qty{};
@@ -66,7 +68,7 @@ class OrderBook {
   std::unordered_map<OrderId, Handle, StrongIdHash<OrderIdTag>> order_id_index_;
 
 #ifndef NDEBUG
-  // Only provided in debug builds. For verifying invariants.
+  // Only provided in debug builds. Used to verify invariants.
   void verify() const;
 #endif
 };
