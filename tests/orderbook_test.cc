@@ -1,8 +1,9 @@
+#include "../include/orderbook.h"
+
 #include <gtest/gtest.h>
 
-#include "../include/trade.h"
-
-TEST(Trade, Init) {
-  Trade t = Trade();
-  EXPECT_EQ(t.qty_.v_, 0);
+TEST(OrderBook, AddLimit) {
+  OrderBook ob = OrderBook();
+  ob.add_limit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{2},
+               TimeInForce::kGoodTillCancel);
 }

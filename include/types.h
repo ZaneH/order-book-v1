@@ -16,7 +16,8 @@ using Underlying = uint32_t;
 template <class Tag>
 struct StrongId {
   Underlying v{};
-  bool operator==(const StrongId&) const = default;
+  friend constexpr bool operator==(StrongId, StrongId) = default;
+  friend constexpr auto operator<=>(StrongId, StrongId) = default;
 };
 
 template <class Tag>

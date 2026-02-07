@@ -18,10 +18,6 @@ add_executable(clob_cli
 
 add_library(orderbook
   SHARED
-  include/types.h
-  include/order.h
-  include/trade.h
-  include/orderbook.h
   src/orderbook.cc
 )
 
@@ -37,6 +33,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(orderbook_test
+  src/orderbook.cc
   tests/orderbook_test.cc
 )
 

@@ -10,6 +10,8 @@ struct Order {
 
   Quantity qty;
   Price price;
+
+  TimeInForce tif;
 };
 
 #endif
