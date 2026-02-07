@@ -4,15 +4,15 @@
 #include <map>
 #include <utility>
 
-Quantity OrderBook::depth_at(OrderSide side, Price price) {
+Quantity OrderBook::DepthAt(OrderSide side, Price price) {
   auto& book_side = side == OrderSide::kBuy ? bids_ : asks_;
   auto it = book_side.find(price);
   if (it == book_side.end()) return Quantity{0};
   return it->second.aggregate_qty;
 }
 
-AddResult OrderBook::add_limit(UserId user_id, OrderSide side, Price price,
-                               Quantity qty, TimeInForce tif) {
+AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
+                              Quantity qty, TimeInForce tif) {
   if (qty == Quantity{0}) {
     return RejectReason::kBadQty;
   }
@@ -67,7 +67,7 @@ void verify_side(std::map<Price, Level> book_side) {
   }
 }
 
-void OrderBook::verify() const {
+void OrderBook::Verify() const {
   verify_side(bids_);
   verify_side(asks_);
 }

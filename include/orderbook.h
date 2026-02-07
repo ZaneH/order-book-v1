@@ -44,22 +44,22 @@ struct Handle {
 class OrderBook {
  public:
   // Postconditions: FIFO preserved, empty levels removed, no crossed book
-  AddResult add_limit(UserId user_id, OrderSide side, Price price, Quantity qty,
-                      TimeInForce tif);
+  AddResult AddLimit(UserId user_id, OrderSide side, Price price, Quantity qty,
+                     TimeInForce tif);
   // Postconditions: FIFO preserved, empty levels removed, no crossed book
-  AddResult add_market(UserId user_id, OrderSide side, Quantity qty,
-                       TimeInForce tif);
+  AddResult AddMarket(UserId user_id, OrderSide side, Quantity qty,
+                      TimeInForce tif);
 
   // Cancelling an order is O(1) because the location of every order is stored
   // in the order_id_index_ class data member as a Handle. Cancelling an order
   // will not require shifting any elements because std::list is being used to
   // store orders.
-  bool cancel(OrderId order_id);
+  bool Cancel(OrderId order_id);
 
-  std::optional<Price> best_bid();
-  std::optional<Price> best_ask();
+  std::optional<Price> BestBid();
+  std::optional<Price> BestAsk();
 
-  Quantity depth_at(OrderSide side, Price price);
+  Quantity DepthAt(OrderSide side, Price price);
 
  private:
   std::map<Price, Level> bids_;
@@ -69,7 +69,7 @@ class OrderBook {
 
 #ifndef NDEBUG
   // Only provided in debug builds. Used to verify invariants.
-  void verify() const;
+  void Verify() const;
 #endif
 };
 
