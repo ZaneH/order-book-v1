@@ -60,6 +60,12 @@ set(SAN_FLAGS
 )
 
 add_library(project_defaults INTERFACE)
+add_library(tl_expected INTERFACE)
+
+target_include_directories(tl_expected
+  INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party
+)
 
 target_compile_features(project_defaults
   INTERFACE
@@ -75,6 +81,6 @@ target_link_options(project_defaults
   $<$<CONFIG:Debug>:${SAN_FLAGS}>
 )
 
-target_link_libraries(clob_cli PRIVATE project_defaults)
-target_link_libraries(orderbook PRIVATE project_defaults)
-target_link_libraries(orderbook_test PRIVATE project_defaults)
+target_link_libraries(clob_cli PRIVATE project_defaults tl_expected)
+target_link_libraries(orderbook PRIVATE project_defaults tl_expected)
+target_link_libraries(orderbook_test PRIVATE project_defaults tl_expected)

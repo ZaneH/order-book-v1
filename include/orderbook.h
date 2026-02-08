@@ -1,12 +1,11 @@
 #ifndef INCLUDE_ORDERBOOK_H_
 #define INCLUDE_ORDERBOOK_H_
 
+#include <expected/expected.hpp>
 #include <list>
 #include <map>
 #include <optional>
-#include <string>
 #include <unordered_map>
-#include <variant>
 #include <vector>
 
 #include "order.h"
@@ -27,7 +26,7 @@ struct AddResultPayload {
   Quantity remaining_qty;
 };
 
-using AddResult = std::variant<RejectReason, AddResultPayload>;
+using AddResult = tl::expected<AddResultPayload, RejectReason>;
 
 struct Level {
   Quantity aggregate_qty{};

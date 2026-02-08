@@ -1,6 +1,7 @@
 #include "../include/orderbook.h"
 
 #include <cassert>
+#include <expected/expected.hpp>
 #include <map>
 #include <utility>
 
@@ -14,10 +15,10 @@ Quantity OrderBook::DepthAt(OrderSide side, Price price) {
 AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
                               Quantity qty, TimeInForce tif) {
   if (qty == Quantity{0}) {
-    return RejectReason::kBadQty;
+    return tl::unexpected<RejectReason>(RejectReason::kBadQty);
   }
   if (price == Price{0}) {
-    return RejectReason::kBadPrice;
+    return tl::unexpected<RejectReason>(RejectReason::kBadPrice);
   }
 
   auto const& order = Order{
