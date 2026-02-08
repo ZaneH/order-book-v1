@@ -22,7 +22,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
   }
 
   auto const& order = Order{
-      .id = OrderId{0},
+      .id = OrderId{order_nonce_},
       .creator_id = user_id,
       .side = side,
       .qty = qty,
@@ -42,8 +42,10 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
     level_it->second.aggregate_qty += order.qty;
   }
 
+  order_nonce_++;
+
 #ifndef NDEBUG
-  // verify();
+  Verify();
 #endif
 
   return AddResultPayload{

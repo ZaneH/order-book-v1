@@ -1,11 +1,12 @@
 #ifndef INCLUDE_ORDERBOOK_H_
 #define INCLUDE_ORDERBOOK_H_
 
+#include <cstdint>
 #include <expected/expected.hpp>
 #include <list>
 #include <map>
 #include <optional>
-#include <sstream>
+#include <ostream>
 #include <unordered_map>
 #include <vector>
 
@@ -96,6 +97,8 @@ class OrderBook {
  private:
   std::map<Price, Level> bids_;
   std::map<Price, Level> asks_;
+
+  uint32_t order_nonce_;
 
   std::unordered_map<OrderId, Handle, StrongIdHash<OrderIdTag>> order_id_index_;
 
