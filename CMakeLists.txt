@@ -28,13 +28,7 @@ FetchContent_Declare(
   GIT_TAG        52eb8108c5bdec04579160ae17225d66034bd723
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-  absl
-  GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
-  GIT_TAG        d407ef122a08203648451e0fec77b3f868b71112
-)
-FetchContent_MakeAvailable(googletest absl)
+FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
@@ -46,8 +40,6 @@ add_executable(orderbook_test
 target_link_libraries(orderbook_test
   PRIVATE
   GTest::gtest_main
-  absl::base
-  absl::strings
 )
 
 include(GoogleTest)
