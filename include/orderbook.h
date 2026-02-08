@@ -5,6 +5,7 @@
 #include <list>
 #include <map>
 #include <optional>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
@@ -59,6 +60,38 @@ class OrderBook {
   std::optional<Price> BestAsk();
 
   Quantity DepthAt(OrderSide side, Price price);
+
+  friend std::ostream& operator<<(std::ostream& os, const OrderBook& book) {
+    os << "Book: ";
+    if (book.bids_.size() == 0 && book.asks_.size() == 0) {
+      os << "(empty)";
+      return os;
+    }
+
+    if (book.bids_.size() > 0) {
+      os << "\n[bids]\n";
+      for (const auto& [price, level] : book.bids_) {
+        os << price.v << ": ";
+        for (const auto& order : level.orders) {
+          os << "B" << order.id.v << "(" << order.qty.v << "), ";
+        }
+        os << "\n";
+      }
+    }
+
+    if (book.asks_.size() > 0) {
+      os << "[asks]\n";
+      for (const auto& [price, level] : book.asks_) {
+        os << price.v << ": ";
+        for (const auto& order : level.orders) {
+          os << "A" << order.id.v << "(" << order.qty.v << "), ";
+        }
+        os << "\n";
+      }
+    }
+
+    return os;
+  };
 
  private:
   std::map<Price, Level> bids_;

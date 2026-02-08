@@ -34,7 +34,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
   auto level_it = book_side.find(price);
   if (level_it == book_side.end()) {
     book_side.insert(std::pair(price, Level{
-                                          .aggregate_qty = Quantity{order.qty},
+                                          .aggregate_qty = order.qty,
                                           .orders = std::list<Order>{order},
                                       }));
   } else {
