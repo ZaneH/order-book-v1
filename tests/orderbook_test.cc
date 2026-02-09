@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 
+#include <ostream>
+
 TEST(OrderBook, AddLimit) {
   OrderBook ob = OrderBook();
   auto result = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
@@ -56,4 +58,26 @@ TEST(OrderBook, AddLimitWithBadPrice) {
                             TimeInForce::kGoodTillCancel);
 
   assert(result.error() == RejectReason::kBadPrice);
+}
+
+TEST(OrderBook, CancelOrder) {
+  OrderBook ob = OrderBook();
+  auto result = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
+                            TimeInForce::kGoodTillCancel);
+  auto result2 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
+                             TimeInForce::kGoodTillCancel);
+  auto result3 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
+                             Quantity{5}, TimeInForce::kGoodTillCancel);
+
+  bool is_gone = ob.Cancel(result2.value().order_id);
+  std::cerr << is_gone << std::endl;
+  std::cerr << ob << std::endl;
+
+  assert(result.value().status == OrderStatus::kAwaitingFill);
+  assert(result2.value().status == OrderStatus::kAwaitingFill);
+  assert(result3.value().status == OrderStatus::kAwaitingFill);
+
+  assert(ob.DepthAt(OrderSide::kSell, Price{1}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{5});
+  assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{10});
 }

@@ -1,8 +1,12 @@
 #include "../include/orderbook.h"
 
 #include <cassert>
+#include <cstdint>
 #include <expected/expected.hpp>
+#include <iostream>
 #include <map>
+#include <ostream>
+#include <unordered_map>
 #include <utility>
 
 Quantity OrderBook::DepthAt(OrderSide side, Price price) {
@@ -42,6 +46,11 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
     level_it->second.aggregate_qty += order.qty;
   }
 
+  auto last_order_it = level_it->second.orders.rbegin().base();
+  order_id_index_.insert(std::pair{
+      order_nonce_,
+      Handle{.side = side, .level_it = level_it, .order_it = last_order_it}});
+
   order_nonce_++;
 
 #ifndef NDEBUG
@@ -54,6 +63,18 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
       .immediate_trades = std::vector<Trade>{},
       .remaining_qty = Quantity{0},
   };
+}
+
+bool OrderBook::Cancel(OrderId id) {
+  auto handle_it = order_id_index_.find(id);
+  if (handle_it == order_id_index_.end()) {
+    return false;
+  }
+  Handle& handle = handle_it->second;
+  Level& level = handle.level_it->second;
+  level.orders.erase(handle.order_it);
+  order_id_index_.erase(handle_it);
+  return true;
 }
 
 #ifndef NDEBUG
