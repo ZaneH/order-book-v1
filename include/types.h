@@ -47,6 +47,11 @@ struct StrongNum {
     return a;
   }
 
+  friend constexpr StrongNum operator-=(StrongNum<Tag>& a, StrongNum<Tag> b) {
+    a.v = a.v - b.v;
+    return a;
+  }
+
   friend constexpr bool operator==(StrongNum, StrongNum) = default;
   friend constexpr auto operator<=>(StrongNum, StrongNum) = default;
 };

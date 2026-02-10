@@ -79,5 +79,5 @@ TEST(OrderBook, CancelOrder) {
 
   assert(ob.DepthAt(OrderSide::kSell, Price{1}) == Quantity{0});
   assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{5});
-  assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{10});
+  assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{5});
 }

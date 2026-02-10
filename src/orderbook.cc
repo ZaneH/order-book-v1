@@ -71,6 +71,8 @@ bool OrderBook::Cancel(OrderId id) {
   }
   Handle& handle = handle_it->second;
   Level& level = handle.level_it->second;
+
+  level.aggregate_qty -= handle.order_it->qty;
   level.orders.erase(handle.order_it);
   order_id_index_.erase(handle_it);
   return true;
