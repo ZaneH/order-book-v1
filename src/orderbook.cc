@@ -34,22 +34,21 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
       .tif = tif,
   };
 
-  auto& book_side = side == OrderSide::kBuy ? bids_ : asks_;
-  auto level_it = book_side.find(price);
-  if (level_it == book_side.end()) {
-    book_side.insert(std::pair(price, Level{
-                                          .aggregate_qty = order.qty,
-                                          .orders = std::list<Order>{order},
-                                      }));
-  } else {
-    level_it->second.orders.emplace_back(order);
-    level_it->second.aggregate_qty += order.qty;
-  }
+  auto& book_side = (side == OrderSide::kBuy) ? bids_ : asks_;
 
-  auto last_order_it = level_it->second.orders.rbegin().base();
-  order_id_index_.insert(std::pair{
-      order_nonce_,
-      Handle{.side = side, .level_it = level_it, .order_it = last_order_it}});
+  auto [level_it, inserted] = book_side.try_emplace(
+      price, Level{.aggregate_qty = Quantity{0}, .orders = {}});
+
+  Level& level = level_it->second;
+
+  level.orders.emplace_back(order);
+  auto order_it = std::prev(level.orders.end());
+
+  level.aggregate_qty += order.qty;
+
+  order_id_index_.emplace(
+      order.id,
+      Handle{.side = side, .level_it = level_it, .order_it = order_it});
 
   order_nonce_++;
 
