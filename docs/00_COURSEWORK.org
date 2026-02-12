@@ -125,7 +125,7 @@ Classic baseline is fine. Make it correct first.
 Now you write real code, but keep it small.
 
 ** tasks
-- [ ] Implement add_limit for non-crossing case:
+- [X] Implement add_limit for non-crossing case:
   - create/find level
   - push_back into FIFO
   - update aggregate

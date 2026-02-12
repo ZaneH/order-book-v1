@@ -1,11 +1,8 @@
 #include "../include/orderbook.h"
 
 #include <cassert>
-#include <cstdint>
 #include <expected/expected.hpp>
-#include <iostream>
 #include <map>
-#include <ostream>
 #include <unordered_map>
 #include <utility>
 
@@ -35,6 +32,12 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
   };
 
   auto& book_side = (side == OrderSide::kBuy) ? bids_ : asks_;
+
+  // if (side == OrderSide::kBuy && order.price >= BestAsk()) {
+  //   // Cross, immediate match
+  // } else if (side == OrderSide::kSell && order.price <= BestBid()) {
+  //   // Cross, immediate match
+  // }
 
   auto [level_it, inserted] = book_side.try_emplace(
       price, Level{.aggregate_qty = Quantity{0}, .orders = {}});
