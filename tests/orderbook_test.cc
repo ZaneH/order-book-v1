@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include <ostream>
+/* NON-CROSSING TESTS */
 
 TEST(OrderBook, AddLimitSingleBuy) {
   OrderBook ob = OrderBook();
@@ -81,16 +81,19 @@ TEST(OrderBook, CancelOrder) {
   assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{5});
 }
 
+/* CROSSING TESTS */
+
 TEST(OrderBook, AddLimitCrossCase) {
   OrderBook ob = OrderBook();
   auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{10},
-                             Quantity{10}, TimeInForce::kGoodTillCancel);
+                             Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
   auto result2 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
-                             Quantity{5}, TimeInForce::kGoodTillCancel);
+                             Quantity{5}, TimeInForce::kGoodTillCancel);  // A1
 
   assert(result1.value().status == OrderStatus::kAwaitingFill);
-  assert(result2.value().status == OrderStatus::kAwaitingFill);
+  assert(result2.value().status == OrderStatus::kImmediateFill);
 
+  // A1 takes 5 from B1 leaving B1 with 5 unfilled
   assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
   assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{5});
 }

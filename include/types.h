@@ -66,6 +66,7 @@ using Price = Ticks;
 enum class OrderStatus {
   kAwaitingFill = 0,
   kPartialFill,
+  kImmediateFill,
   kRejected,
 };
 

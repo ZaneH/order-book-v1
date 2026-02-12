@@ -27,6 +27,32 @@ std::optional<Price> OrderBook::BestBid() {
   return bids_.rbegin()->first;
 }
 
+AddResultPayload Match(std::map<Price, Level>* book_side, Price value,
+                       const Order& order) {
+  Quantity qty_unfilled = order.qty;
+  auto& level = book_side->at(value);
+  while (qty_unfilled > Quantity{0}) {
+    auto& first_in_level = level.orders.front();
+    Quantity fill_amount =
+        first_in_level.qty > qty_unfilled ? qty_unfilled : first_in_level.qty;
+
+    first_in_level.qty -= fill_amount;
+    level.aggregate_qty -= fill_amount;
+    qty_unfilled -= fill_amount;
+    if (first_in_level.qty == Quantity{0}) {
+      // TODO: Remove order from level
+      // TODO: Remove level if empty
+    }
+    // TODO: Emit trade
+  }
+
+  // WARNING: This is dummy data, implementation needs to be finished
+  return AddResultPayload{.order_id = order.id,
+                          .status = OrderStatus::kImmediateFill,
+                          .immediate_trades = std::vector<Trade>(),
+                          .remaining_qty = Quantity{0}};
+}
+
 AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
                               Quantity qty, TimeInForce tif) {
   if (qty == Quantity{0}) {
@@ -45,21 +71,26 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
       .tif = tif,
   };
 
-  auto& book_side = (side == OrderSide::kBuy) ? bids_ : asks_;
+  auto* book_side = (side == OrderSide::kBuy) ? &bids_ : &asks_;
 
-  auto b_ask = BestAsk();
-  auto b_bid = BestBid();
+  auto best_ask = BestAsk();
+  auto best_bid = BestBid();
 
-  if (side == OrderSide::kBuy && b_ask.has_value() && order.price >= b_ask) {
-    // TODO: Execute immediate match
+  if (side == OrderSide::kBuy && best_ask.has_value() &&
+      order.price >= best_ask.value()) {
+    auto* other_side = (side == OrderSide::kBuy) ? &asks_ : &bids_;
     std::cerr << "Crossing case for incoming Buy" << std::endl;
-  } else if (side == OrderSide::kSell && b_bid.has_value() &&
-             order.price <= b_bid) {
-    // TODO: Execute immediate match
+    // TODO: Detect partial fills and add them to the book
+    return Match(other_side, best_ask.value(), order);
+  } else if (side == OrderSide::kSell && best_bid.has_value() &&
+             order.price <= best_bid.value()) {
+    auto* other_side = (side == OrderSide::kBuy) ? &asks_ : &bids_;
     std::cerr << "Crossing case for incoming Sell" << std::endl;
+    // TODO: Detect partial fills and add them to the book
+    return Match(other_side, best_bid.value(), order);
   }
 
-  auto [level_it, inserted] = book_side.try_emplace(
+  auto [level_it, inserted] = book_side->try_emplace(
       price, Level{.aggregate_qty = Quantity{0}, .orders = {}});
 
   Level& level = level_it->second;
