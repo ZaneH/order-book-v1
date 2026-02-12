@@ -2,7 +2,11 @@
 
 #include <cassert>
 #include <expected/expected.hpp>
+#include <iostream>
+#include <iterator>
 #include <map>
+#include <optional>
+#include <ostream>
 #include <unordered_map>
 #include <utility>
 
@@ -11,6 +15,26 @@ Quantity OrderBook::DepthAt(OrderSide side, Price price) {
   auto it = book_side.find(price);
   if (it == book_side.end()) return Quantity{0};
   return it->second.aggregate_qty;
+}
+
+std::optional<Price> OrderBook::BestAsk() {
+  std::optional<Price> lowest_ask = std::nullopt;
+  for (auto [price, _] : asks_) {
+    if (price < lowest_ask) {
+      lowest_ask = price;
+    }
+  }
+  return lowest_ask;
+}
+
+std::optional<Price> OrderBook::BestBid() {
+  std::optional<Price> highest_bid = std::nullopt;
+  for (auto [price, _] : bids_) {
+    if (price > highest_bid) {
+      highest_bid = price;
+    }
+  }
+  return highest_bid;
 }
 
 AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
@@ -33,11 +57,17 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
 
   auto& book_side = (side == OrderSide::kBuy) ? bids_ : asks_;
 
-  // if (side == OrderSide::kBuy && order.price >= BestAsk()) {
-  //   // Cross, immediate match
-  // } else if (side == OrderSide::kSell && order.price <= BestBid()) {
-  //   // Cross, immediate match
-  // }
+  auto b_ask = BestAsk();
+  auto b_bid = BestBid();
+
+  if (side == OrderSide::kBuy && b_ask.has_value() && order.price >= b_ask) {
+    // TODO: Execute immediate match
+    std::cerr << "Crossing case for incoming Buy" << std::endl;
+  } else if (side == OrderSide::kSell && b_bid.has_value() &&
+             order.price <= b_bid) {
+    // TODO: Execute immediate match
+    std::cerr << "Crossing case for incoming Sell" << std::endl;
+  }
 
   auto [level_it, inserted] = book_side.try_emplace(
       price, Level{.aggregate_qty = Quantity{0}, .orders = {}});
