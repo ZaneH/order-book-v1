@@ -18,23 +18,13 @@ Quantity OrderBook::DepthAt(OrderSide side, Price price) {
 }
 
 std::optional<Price> OrderBook::BestAsk() {
-  std::optional<Price> lowest_ask = std::nullopt;
-  for (auto [price, _] : asks_) {
-    if (price < lowest_ask) {
-      lowest_ask = price;
-    }
-  }
-  return lowest_ask;
+  if (asks_.empty()) return std::nullopt;
+  return asks_.begin()->first;
 }
 
 std::optional<Price> OrderBook::BestBid() {
-  std::optional<Price> highest_bid = std::nullopt;
-  for (auto [price, _] : bids_) {
-    if (price > highest_bid) {
-      highest_bid = price;
-    }
-  }
-  return highest_bid;
+  if (bids_.empty()) return std::nullopt;
+  return bids_.rbegin()->first;
 }
 
 AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
