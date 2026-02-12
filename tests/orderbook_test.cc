@@ -4,7 +4,7 @@
 
 #include <ostream>
 
-TEST(OrderBook, AddLimit) {
+TEST(OrderBook, AddLimitSingleBuy) {
   OrderBook ob = OrderBook();
   auto result = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
                             TimeInForce::kGoodTillCancel);
@@ -15,27 +15,27 @@ TEST(OrderBook, AddLimit) {
   assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{5});
 }
 
-TEST(OrderBook, OrderNonce) {
+TEST(OrderBook, AddLimitOrderNonce) {
   OrderBook ob = OrderBook();
-  auto result = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
-                            TimeInForce::kGoodTillCancel);
+  auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
+                             TimeInForce::kGoodTillCancel);
   auto result2 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
                              TimeInForce::kGoodTillCancel);
 
-  assert(result.value().order_id.v == 0);
+  assert(result1.value().order_id.v == 0);
   assert(result2.value().order_id.v == 1);
 }
 
-TEST(OrderBook, AddMultipleLimitOrders) {
+TEST(OrderBook, AddLimitMultipleOrders) {
   OrderBook ob = OrderBook();
-  auto result = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
-                            TimeInForce::kGoodTillCancel);
+  auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
+                             TimeInForce::kGoodTillCancel);
   auto result2 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
                              TimeInForce::kGoodTillCancel);
   auto result3 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
                              Quantity{5}, TimeInForce::kGoodTillCancel);
 
-  assert(result.value().status == OrderStatus::kAwaitingFill);
+  assert(result1.value().status == OrderStatus::kAwaitingFill);
   assert(result2.value().status == OrderStatus::kAwaitingFill);
   assert(result3.value().status == OrderStatus::kAwaitingFill);
 
@@ -62,8 +62,8 @@ TEST(OrderBook, AddLimitWithBadPrice) {
 
 TEST(OrderBook, CancelOrder) {
   OrderBook ob = OrderBook();
-  auto result = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
-                            TimeInForce::kGoodTillCancel);
+  auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
+                             TimeInForce::kGoodTillCancel);
   auto result2 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
                              TimeInForce::kGoodTillCancel);
   auto result3 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
@@ -73,7 +73,7 @@ TEST(OrderBook, CancelOrder) {
   std::cerr << is_gone << std::endl;
   std::cerr << ob << std::endl;
 
-  assert(result.value().status == OrderStatus::kAwaitingFill);
+  assert(result1.value().status == OrderStatus::kAwaitingFill);
   assert(result2.value().status == OrderStatus::kAwaitingFill);
   assert(result3.value().status == OrderStatus::kAwaitingFill);
 
