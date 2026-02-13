@@ -27,30 +27,52 @@ std::optional<Price> OrderBook::BestBid() {
   return bids_.rbegin()->first;
 }
 
-AddResultPayload Match(std::map<Price, Level>* book_side, Price value,
-                       const Order& order) {
+MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
+  std::vector<Trade> trades{};
+  std::optional<Order> unfilled{};
+
+  BookSide* other_side = (side == OrderSide::kBuy) ? &asks_ : &bids_;
+
   Quantity qty_unfilled = order.qty;
-  auto& level = book_side->at(value);
+  auto& level = other_side->at(value);
   while (qty_unfilled > Quantity{0}) {
-    auto& first_in_level = level.orders.front();
+    if (level.orders.empty()) {
+      unfilled = order;
+      unfilled->qty = qty_unfilled;
+      break;
+    }
+
+    Order& first_in_level = level.orders.front();
     Quantity fill_amount =
-        first_in_level.qty > qty_unfilled ? qty_unfilled : first_in_level.qty;
+        first_in_level.qty < qty_unfilled ? first_in_level.qty : qty_unfilled;
 
     first_in_level.qty -= fill_amount;
     level.aggregate_qty -= fill_amount;
     qty_unfilled -= fill_amount;
     if (first_in_level.qty == Quantity{0}) {
-      // TODO: Remove order from level
-      // TODO: Remove level if empty
+      auto handle_it = order_id_index_.at(first_in_level.id);
+      auto order_it = handle_it.order_it;
+      level.orders.erase(order_it);
+      order_id_index_.erase(first_in_level.id);
     }
-    // TODO: Emit trade
+
+    // TODO: Might be able to be merged with earlier check
+    if (level.orders.empty()) {
+      other_side->erase(value);
+    }
+
+    trades.emplace_back(Trade{
+        .maker_id = first_in_level.creator_id,
+        .taker_id = order.creator_id,
+        .match_id = MatchId{0},  // TODO: Create Match nonce
+        .qty = fill_amount,
+        .price = first_in_level.price,
+    });
   }
 
-  // WARNING: This is dummy data, implementation needs to be finished
-  return AddResultPayload{.order_id = order.id,
-                          .status = OrderStatus::kImmediateFill,
-                          .immediate_trades = std::vector<Trade>(),
-                          .remaining_qty = Quantity{0}};
+  return MatchResult{.trades = trades,
+                     .unfilled = unfilled,
+                     .filled_all = qty_unfilled == Quantity{0}};
 }
 
 AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
@@ -76,18 +98,31 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
   auto best_ask = BestAsk();
   auto best_bid = BestBid();
 
+  MatchResult cross_match{};
   if (side == OrderSide::kBuy && best_ask.has_value() &&
       order.price >= best_ask.value()) {
-    auto* other_side = (side == OrderSide::kBuy) ? &asks_ : &bids_;
     std::cerr << "Crossing case for incoming Buy" << std::endl;
-    // TODO: Detect partial fills and add them to the book
-    return Match(other_side, best_ask.value(), order);
+    cross_match = Match(side, best_ask.value(), order);
   } else if (side == OrderSide::kSell && best_bid.has_value() &&
              order.price <= best_bid.value()) {
-    auto* other_side = (side == OrderSide::kBuy) ? &asks_ : &bids_;
     std::cerr << "Crossing case for incoming Sell" << std::endl;
-    // TODO: Detect partial fills and add them to the book
-    return Match(other_side, best_bid.value(), order);
+    cross_match = Match(side, best_bid.value(), order);
+  }
+
+  if (cross_match.unfilled.has_value()) {
+    return AddResultPayload{
+        .order_id = order.id,
+        .status = OrderStatus::kPartialFill,
+        .immediate_trades = cross_match.trades,
+        .remaining_qty = cross_match.unfilled->qty,
+    };
+  } else if (cross_match.filled_all) {
+    return AddResultPayload{
+        .order_id = order.id,
+        .status = OrderStatus::kImmediateFill,
+        .immediate_trades = cross_match.trades,
+        .remaining_qty = Quantity{0},
+    };
   }
 
   auto [level_it, inserted] = book_side->try_emplace(

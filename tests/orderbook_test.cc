@@ -83,7 +83,7 @@ TEST(OrderBook, CancelOrder) {
 
 /* CROSSING TESTS */
 
-TEST(OrderBook, AddLimitCrossCase) {
+TEST(OrderBook, AddLimitCrossCaseImmediateFill) {
   OrderBook ob = OrderBook();
   auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{10},
                              Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
@@ -94,6 +94,21 @@ TEST(OrderBook, AddLimitCrossCase) {
   assert(result2.value().status == OrderStatus::kImmediateFill);
 
   // A1 takes 5 from B1 leaving B1 with 5 unfilled
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
   assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{5});
+  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+}
+
+TEST(OrderBook, AddLimitCrossCasePartialFill) {
+  OrderBook ob = OrderBook();
+  auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{10},
+                             Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
+  auto result2 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
+                             Quantity{20}, TimeInForce::kGoodTillCancel);  // A1
+
+  assert(result1.value().status == OrderStatus::kAwaitingFill);
+  assert(result2.value().status == OrderStatus::kPartialFill);
+
+  // A1 takes 5 from B1 leaving B1 with 5 unfilled
+  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{10});
 }

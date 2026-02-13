@@ -14,6 +14,18 @@
 #include "trade.h"
 #include "types.h"
 
+struct Level {
+  Quantity aggregate_qty{};
+  std::list<Order> orders;
+};
+
+struct Handle {
+  OrderSide side;
+  using SideMap = std::map<Price, Level>;
+  SideMap::iterator level_it;
+  std::list<Order>::iterator order_it;
+};
+
 enum class RejectReason {
   kBadPrice = 0,
   kBadQty,
@@ -29,17 +41,12 @@ struct AddResultPayload {
 };
 
 using AddResult = tl::expected<AddResultPayload, RejectReason>;
+using BookSide = std::map<Price, Level>;
 
-struct Level {
-  Quantity aggregate_qty{};
-  std::list<Order> orders;
-};
-
-struct Handle {
-  OrderSide side;
-  using SideMap = std::map<Price, Level>;
-  SideMap::iterator level_it;
-  std::list<Order>::iterator order_it;
+struct MatchResult {
+  std::vector<Trade> trades;
+  std::optional<Order> unfilled;
+  bool filled_all;
 };
 
 class OrderBook {
@@ -101,6 +108,8 @@ class OrderBook {
   uint32_t order_nonce_;
 
   std::unordered_map<OrderId, Handle, StrongIdHash<OrderIdTag>> order_id_index_;
+
+  MatchResult Match(OrderSide side, Price value, const Order& order);
 
 #ifndef NDEBUG
   // Only provided in debug builds. Used to verify invariants.
