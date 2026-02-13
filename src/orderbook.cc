@@ -36,9 +36,10 @@ MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
   Quantity qty_unfilled = order.qty;
   auto& level = other_side->at(value);
   while (qty_unfilled > Quantity{0}) {
-    if (level.orders.empty()) {
+    if (!other_side->contains(value) || level.orders.empty()) {
       unfilled = order;
       unfilled->qty = qty_unfilled;
+      // TODO: Add partially filled order to book
       break;
     }
 
@@ -49,17 +50,6 @@ MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
     first_in_level.qty -= fill_amount;
     level.aggregate_qty -= fill_amount;
     qty_unfilled -= fill_amount;
-    if (first_in_level.qty == Quantity{0}) {
-      auto handle_it = order_id_index_.at(first_in_level.id);
-      auto order_it = handle_it.order_it;
-      level.orders.erase(order_it);
-      order_id_index_.erase(first_in_level.id);
-    }
-
-    // TODO: Might be able to be merged with earlier check
-    if (level.orders.empty()) {
-      other_side->erase(value);
-    }
 
     trades.emplace_back(Trade{
         .maker_id = first_in_level.creator_id,
@@ -68,6 +58,18 @@ MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
         .qty = fill_amount,
         .price = first_in_level.price,
     });
+
+    if (first_in_level.qty == Quantity{0}) {
+      auto& handle_it = order_id_index_.at(first_in_level.id);
+      auto order_it = handle_it.order_it;
+      order_id_index_.erase(first_in_level.id);
+      level.orders.erase(order_it);
+    }
+
+    // TODO: Might be able to be merged with earlier check
+    if (level.orders.empty()) {
+      other_side->erase(value);
+    }
   }
 
   return MatchResult{.trades = trades,

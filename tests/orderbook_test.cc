@@ -108,7 +108,8 @@ TEST(OrderBook, AddLimitCrossCasePartialFill) {
   assert(result1.value().status == OrderStatus::kAwaitingFill);
   assert(result2.value().status == OrderStatus::kPartialFill);
 
-  // A1 takes 5 from B1 leaving B1 with 5 unfilled
+  // A1 takes 10 from B1, resulting in B1 being removed from the book and
+  // leaving A1 with 10 unfilled
   assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
   assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{10});
 }
