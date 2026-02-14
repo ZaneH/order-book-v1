@@ -107,13 +107,50 @@ TEST(OrderBook, AddLimitCrossCasePartialFill) {
   auto result3 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
                              Quantity{20}, TimeInForce::kGoodTillCancel);  // A1
 
+  /*
+   * Incoming: A1 wants to sell 20 @ 10
+   *
+   * [bids]
+   * 10: B1(10)
+   * 5:  B2(2)
+   */
+
   assert(result1.value().status == OrderStatus::kAwaitingFill);
   assert(result2.value().status == OrderStatus::kAwaitingFill);
   assert(result3.value().status == OrderStatus::kPartialFill);
 
   // A1 takes 10 from B1, resulting in B1 being removed from the book and
-  // leaving A1 with 10 unfilled. B2 is resting in the book.
+  // leaving A1 with 10 unfilled. B2 is untouched, resting in the book.
   assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
   assert(ob.DepthAt(OrderSide::kBuy, Price{5}) == Quantity{2});
   assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{10});
+}
+
+TEST(OrderBook, AddLimitCrossCaseMultipleLevels) {
+  OrderBook ob = OrderBook();
+  auto result1 =
+      ob.AddLimit(UserId{0}, OrderSide::kSell, Price{15}, Quantity{10},
+                  TimeInForce::kGoodTillCancel);  // A1
+  auto result2 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
+                             Quantity{5}, TimeInForce::kGoodTillCancel);  // A2
+  auto result3 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{20},
+                             Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
+
+  /*
+   * Incoming: B1 wants to buy 10 @ 20
+   *
+   * [asks]
+   * 15: A1(10)
+   * 10: A2(5)
+   */
+
+  assert(result1.value().status == OrderStatus::kAwaitingFill);
+  assert(result2.value().status == OrderStatus::kAwaitingFill);
+  assert(result3.value().status == OrderStatus::kImmediateFill);
+
+  // B1 takes 5 from A2, resulting in A2 being removed from the book. B1 takes 5
+  // from A1 and filling B1. A1 is left with 5 unfilled.
+  assert(ob.DepthAt(OrderSide::kSell, Price{15}) == Quantity{5});
+  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kBuy, Price{20}) == Quantity{0});
 }

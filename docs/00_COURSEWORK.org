@@ -141,7 +141,7 @@ Now you write real code, but keep it small.
 - [X] Implement "match_id" monotonic counter:
   - each incoming order gets a match_id (or each trade gets one, your choice)
   - keep it deterministic
-- [ ] Add debug verification in critical points (behind a compile-time flag if you want).
+- [X] Add debug verification in critical points (behind a compile-time flag if you want).
 
 ** deliverable
 - Tests:

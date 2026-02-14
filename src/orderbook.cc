@@ -46,7 +46,8 @@ void OrderBook::AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
   order_id_++;
 }
 
-MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
+MatchResult OrderBook::Match(OrderSide side, Price best_value,
+                             const Order& order) {
   // TODO: tif=kImmediateFill requires a different impl
   std::vector<Trade> trades{};
   std::optional<Order> unfilled{};
@@ -54,16 +55,25 @@ MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
   BookSide* other_side = (side == OrderSide::kBuy) ? &asks_ : &bids_;
 
   Quantity qty_unfilled = order.qty;
-  auto& level = other_side->at(value);
+  auto& level = other_side->at(best_value);
   while (qty_unfilled > Quantity{0}) {
     if (level.orders.empty()) {
-      other_side->erase(value);
+      other_side->erase(best_value);
     }
 
-    if (!other_side->contains(value)) {
-      unfilled = order;
-      unfilled->qty = qty_unfilled;
-      break;
+    if (!other_side->contains(best_value)) {
+      auto next_best = (side == OrderSide::kBuy) ? BestAsk() : BestBid();
+      bool will_accept = (side == OrderSide::kBuy) ? next_best <= order.price
+                                                   : next_best >= order.price;
+      if (will_accept && next_best.has_value()) {
+        Order reduced_order = order;
+        reduced_order.qty = qty_unfilled;
+        return Match(side, next_best.value(), reduced_order);
+      } else {
+        unfilled = order;
+        unfilled->qty = qty_unfilled;
+        break;
+      }
     }
 
     Order& first_in_level = level.orders.front();
