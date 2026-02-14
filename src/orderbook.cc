@@ -17,14 +17,14 @@ Quantity OrderBook::DepthAt(OrderSide side, Price price) {
   return it->second.aggregate_qty;
 }
 
-std::optional<Price> OrderBook::BestAsk() {
-  if (asks_.empty()) return std::nullopt;
-  return asks_.begin()->first;
-}
-
 std::optional<Price> OrderBook::BestBid() {
   if (bids_.empty()) return std::nullopt;
   return bids_.rbegin()->first;
+}
+
+std::optional<Price> OrderBook::BestAsk() {
+  if (asks_.empty()) return std::nullopt;
+  return asks_.begin()->first;
 }
 
 void OrderBook::AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
@@ -47,6 +47,7 @@ void OrderBook::AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
 }
 
 MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
+  // TODO: tif=kImmediateFill requires a different impl
   std::vector<Trade> trades{};
   std::optional<Order> unfilled{};
 
@@ -62,7 +63,6 @@ MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
     if (!other_side->contains(value)) {
       unfilled = order;
       unfilled->qty = qty_unfilled;
-      // TODO: Add partially filled order to book
       break;
     }
 
@@ -188,9 +188,13 @@ void VerifyAggregateQtyPerLevel(BookSide book_side) {
   }
 }
 
-void VerifyNoEmptyLevels(BookSide book_side) {
+void VerifyNoEmptyLevelsOrEmptyOrders(BookSide book_side) {
   for (auto const& [price, level] : book_side) {
     assert(level.orders.size() != 0);
+
+    for (auto const order : level.orders) {
+      assert(order.qty != Quantity{0});
+    }
   }
 }
 
@@ -198,7 +202,7 @@ void OrderBook::Verify() const {
   VerifyAggregateQtyPerLevel(bids_);
   VerifyAggregateQtyPerLevel(asks_);
 
-  VerifyNoEmptyLevels(bids_);
-  VerifyNoEmptyLevels(asks_);
+  VerifyNoEmptyLevelsOrEmptyOrders(bids_);
+  VerifyNoEmptyLevelsOrEmptyOrders(asks_);
 }
 #endif
