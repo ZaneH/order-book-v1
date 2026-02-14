@@ -102,14 +102,18 @@ TEST(OrderBook, AddLimitCrossCasePartialFill) {
   OrderBook ob = OrderBook();
   auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{10},
                              Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
-  auto result2 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
+  auto result2 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{5}, Quantity{2},
+                             TimeInForce::kGoodTillCancel);  // B2
+  auto result3 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
                              Quantity{20}, TimeInForce::kGoodTillCancel);  // A1
 
   assert(result1.value().status == OrderStatus::kAwaitingFill);
-  assert(result2.value().status == OrderStatus::kPartialFill);
+  assert(result2.value().status == OrderStatus::kAwaitingFill);
+  assert(result3.value().status == OrderStatus::kPartialFill);
 
   // A1 takes 10 from B1, resulting in B1 being removed from the book and
-  // leaving A1 with 10 unfilled
+  // leaving A1 with 10 unfilled. B2 is resting in the book.
   assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kBuy, Price{5}) == Quantity{2});
   assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{10});
 }

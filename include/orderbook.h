@@ -110,6 +110,8 @@ class OrderBook {
   std::unordered_map<OrderId, Handle, StrongIdHash<OrderIdTag>> order_id_index_;
 
   MatchResult Match(OrderSide side, Price value, const Order& order);
+  void AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
+                      const Order& order);
 
 #ifndef NDEBUG
   // Only provided in debug builds. Used to verify invariants.

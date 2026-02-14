@@ -130,7 +130,7 @@ Now you write real code, but keep it small.
   - push_back into FIFO
   - update aggregate
   - insert handle in id_index
-- [ ] Implement add_limit for crossing case:
+- [X] Implement add_limit for crossing case:
   - while incoming qty > 0 and cross exists:
     - look at best level on opposite side
     - match FIFO orders within that level

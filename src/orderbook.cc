@@ -27,6 +27,25 @@ std::optional<Price> OrderBook::BestBid() {
   return bids_.rbegin()->first;
 }
 
+void OrderBook::AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
+                               const Order& order) {
+  auto [level_it, inserted] = book_side->try_emplace(
+      value, Level{.aggregate_qty = Quantity{0}, .orders = {}});
+
+  Level& level = level_it->second;
+
+  level.orders.emplace_back(order);
+  auto order_it = std::prev(level.orders.end());
+
+  level.aggregate_qty += order.qty;
+
+  order_id_index_.emplace(
+      order.id,
+      Handle{.side = side, .level_it = level_it, .order_it = order_it});
+
+  order_nonce_++;
+}
+
 MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
   std::vector<Trade> trades{};
   std::optional<Order> unfilled{};
@@ -36,7 +55,11 @@ MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
   Quantity qty_unfilled = order.qty;
   auto& level = other_side->at(value);
   while (qty_unfilled > Quantity{0}) {
-    if (!other_side->contains(value) || level.orders.empty()) {
+    if (level.orders.empty()) {
+      other_side->erase(value);
+    }
+
+    if (!other_side->contains(value)) {
       unfilled = order;
       unfilled->qty = qty_unfilled;
       // TODO: Add partially filled order to book
@@ -64,11 +87,6 @@ MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
       auto order_it = handle_it.order_it;
       order_id_index_.erase(first_in_level.id);
       level.orders.erase(order_it);
-    }
-
-    // TODO: Might be able to be merged with earlier check
-    if (level.orders.empty()) {
-      other_side->erase(value);
     }
   }
 
@@ -112,6 +130,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
   }
 
   if (cross_match.unfilled.has_value()) {
+    AddOrderToBook(side, book_side, price, cross_match.unfilled.value());
     return AddResultPayload{
         .order_id = order.id,
         .status = OrderStatus::kPartialFill,
@@ -127,21 +146,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
     };
   }
 
-  auto [level_it, inserted] = book_side->try_emplace(
-      price, Level{.aggregate_qty = Quantity{0}, .orders = {}});
-
-  Level& level = level_it->second;
-
-  level.orders.emplace_back(order);
-  auto order_it = std::prev(level.orders.end());
-
-  level.aggregate_qty += order.qty;
-
-  order_id_index_.emplace(
-      order.id,
-      Handle{.side = side, .level_it = level_it, .order_it = order_it});
-
-  order_nonce_++;
+  AddOrderToBook(side, book_side, price, order);
 
 #ifndef NDEBUG
   Verify();
@@ -170,7 +175,7 @@ bool OrderBook::Cancel(OrderId id) {
 }
 
 #ifndef NDEBUG
-void verify_side(std::map<Price, Level> book_side) {
+void VerifyAggregateQtyPerLevel(BookSide book_side) {
   for (auto const& [price, level] : book_side) {
     Quantity level_qty_sum{};
 
@@ -183,8 +188,17 @@ void verify_side(std::map<Price, Level> book_side) {
   }
 }
 
+void VerifyNoEmptyLevels(BookSide book_side) {
+  for (auto const& [price, level] : book_side) {
+    assert(level.orders.size() != 0);
+  }
+}
+
 void OrderBook::Verify() const {
-  verify_side(bids_);
-  verify_side(asks_);
+  VerifyAggregateQtyPerLevel(bids_);
+  VerifyAggregateQtyPerLevel(asks_);
+
+  VerifyNoEmptyLevels(bids_);
+  VerifyNoEmptyLevels(asks_);
 }
 #endif
