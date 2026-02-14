@@ -60,7 +60,7 @@ TEST(OrderBook, AddLimitWithBadPrice) {
   assert(result.error() == RejectReason::kBadPrice);
 }
 
-TEST(OrderBook, CancelOrder) {
+TEST(OrderBook, CancelRestingOrder) {
   OrderBook ob = OrderBook();
   auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
                              TimeInForce::kGoodTillCancel);
@@ -69,19 +69,40 @@ TEST(OrderBook, CancelOrder) {
   auto result3 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
                              Quantity{5}, TimeInForce::kGoodTillCancel);
 
-  bool is_gone = ob.Cancel(result2.value().order_id);
-  assert(is_gone == true);
+  bool cancel_existing = ob.Cancel(result2.value().order_id);
+  assert(cancel_existing == true);
+  bool cancel_nonexisting = ob.Cancel(OrderId{999});
+  assert(cancel_nonexisting == false);
 
   assert(result1.value().status == OrderStatus::kAwaitingFill);
   assert(result2.value().status == OrderStatus::kAwaitingFill);
   assert(result3.value().status == OrderStatus::kAwaitingFill);
 
-  assert(ob.DepthAt(OrderSide::kSell, Price{1}) == Quantity{0});
   assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{5});
   assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{5});
 }
 
 /* CROSSING TESTS */
+
+TEST(OrderBook, CancelFullyTradedOrderFails) {
+  OrderBook ob = OrderBook();
+  auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{10},
+                             Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
+  auto result2 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
+                             Quantity{5}, TimeInForce::kGoodTillCancel);  // A1
+  auto result3 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
+                             Quantity{5}, TimeInForce::kGoodTillCancel);  // A2
+
+  assert(result1.value().status == OrderStatus::kAwaitingFill);
+  assert(result2.value().status == OrderStatus::kImmediateFill);
+
+  // A1 takes 5 from B1, immediately filling A1. A2 then takes 5 from B1,
+  // resulting in A2 being immediately filled and removing B1 from the book.
+  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+
+  assert(ob.Cancel(result1->order_id) == false);
+}
 
 TEST(OrderBook, AddLimitCrossCaseImmediateFill) {
   OrderBook ob = OrderBook();

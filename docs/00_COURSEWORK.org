@@ -154,13 +154,13 @@ Now you write real code, but keep it small.
 Cancel is where the handle design earns its keep.
 
 ** tasks
-- [ ] Implement cancel(order_id):
+- [X] Implement cancel(order_id):
   - lookup id_index; if missing return false
   - erase from list using iterator
   - subtract qty from aggregate
   - erase handle from id_index
   - if level empty: erase level from map
-- [ ] Add tests:
+- [X] Add tests:
   - cancel active order succeeds
   - cancel unknown id fails
   - cancel order after it has fully traded fails
