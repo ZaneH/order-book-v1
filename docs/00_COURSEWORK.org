@@ -138,7 +138,7 @@ Now you write real code, but keep it small.
     - remove filled maker orders and their handles
     - erase empty levels
   - if remainder > 0: rest it (GTC)
-- [ ] Implement "match_id" monotonic counter:
+- [X] Implement "match_id" monotonic counter:
   - each incoming order gets a match_id (or each trade gets one, your choice)
   - keep it deterministic
 - [ ] Add debug verification in critical points (behind a compile-time flag if you want).

@@ -7,6 +7,7 @@ struct Trade {
   UserId maker_id;
   UserId taker_id;
   MatchId match_id;
+  OrderId order_id;
 
   Quantity qty;
   Price price;

@@ -105,7 +105,8 @@ class OrderBook {
   std::map<Price, Level> bids_;
   std::map<Price, Level> asks_;
 
-  uint32_t order_nonce_;
+  uint32_t order_id_;
+  uint32_t match_id_;
 
   std::unordered_map<OrderId, Handle, StrongIdHash<OrderIdTag>> order_id_index_;
 

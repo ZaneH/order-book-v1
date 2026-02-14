@@ -43,7 +43,7 @@ void OrderBook::AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
       order.id,
       Handle{.side = side, .level_it = level_it, .order_it = order_it});
 
-  order_nonce_++;
+  order_id_++;
 }
 
 MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
@@ -77,7 +77,8 @@ MatchResult OrderBook::Match(OrderSide side, Price value, const Order& order) {
     trades.emplace_back(Trade{
         .maker_id = first_in_level.creator_id,
         .taker_id = order.creator_id,
-        .match_id = MatchId{0},  // TODO: Create Match nonce
+        .match_id = MatchId{match_id_},
+        .order_id = order.id,
         .qty = fill_amount,
         .price = first_in_level.price,
     });
@@ -105,7 +106,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
   }
 
   auto const& order = Order{
-      .id = OrderId{order_nonce_},
+      .id = OrderId{order_id_},
       .creator_id = user_id,
       .side = side,
       .qty = qty,
