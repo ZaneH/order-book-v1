@@ -50,6 +50,7 @@ TEST(OrderBook, AddLimitWithBadQty) {
                             TimeInForce::kGoodTillCancel);
 
   assert(result.error() == RejectReason::kBadQty);
+  assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{0});
 }
 
 TEST(OrderBook, AddLimitWithBadPrice) {
@@ -58,6 +59,7 @@ TEST(OrderBook, AddLimitWithBadPrice) {
                             TimeInForce::kGoodTillCancel);
 
   assert(result.error() == RejectReason::kBadPrice);
+  assert(ob.DepthAt(OrderSide::kBuy, Price{0}) == Quantity{0});
 }
 
 TEST(OrderBook, CancelRestingOrder) {
