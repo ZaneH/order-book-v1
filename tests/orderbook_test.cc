@@ -9,21 +9,21 @@ TEST(OrderBook, AddLimitSingleBuy) {
   auto result = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
                             TimeInForce::kGoodTillCancel);
 
-  assert(result.value().status == OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result.value().status, OrderStatus::kAwaitingFill);
 
-  assert(ob.DepthAt(OrderSide::kSell, Price{1}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{5});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{1}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{1}), Quantity{5});
 }
 
-TEST(OrderBook, AddLimitOrderNonce) {
+TEST(OrderBook, AddLimitIncrementOrderId) {
   OrderBook ob = OrderBook();
   auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
                              TimeInForce::kGoodTillCancel);
   auto result2 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
                              TimeInForce::kGoodTillCancel);
 
-  assert(result1.value().order_id.v == 0);
-  assert(result2.value().order_id.v == 1);
+  ASSERT_EQ(result1.value().order_id, OrderId{0});
+  ASSERT_EQ(result2.value().order_id, OrderId{1});
 }
 
 TEST(OrderBook, AddLimitMultipleOrders) {
@@ -35,13 +35,13 @@ TEST(OrderBook, AddLimitMultipleOrders) {
   auto result3 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
                              Quantity{5}, TimeInForce::kGoodTillCancel);
 
-  assert(result1.value().status == OrderStatus::kAwaitingFill);
-  assert(result2.value().status == OrderStatus::kAwaitingFill);
-  assert(result3.value().status == OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result1.value().status, OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result2.value().status, OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result3.value().status, OrderStatus::kAwaitingFill);
 
-  assert(ob.DepthAt(OrderSide::kSell, Price{1}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{5});
-  assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{10});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{1}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{5});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{1}), Quantity{10});
 }
 
 TEST(OrderBook, AddLimitWithBadQty) {
@@ -49,8 +49,8 @@ TEST(OrderBook, AddLimitWithBadQty) {
   auto result = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{0},
                             TimeInForce::kGoodTillCancel);
 
-  assert(result.error() == RejectReason::kBadQty);
-  assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{0});
+  ASSERT_EQ(result.error(), RejectReason::kBadQty);
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{1}), Quantity{0});
 }
 
 TEST(OrderBook, AddLimitWithBadPrice) {
@@ -58,8 +58,8 @@ TEST(OrderBook, AddLimitWithBadPrice) {
   auto result = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{0}, Quantity{5},
                             TimeInForce::kGoodTillCancel);
 
-  assert(result.error() == RejectReason::kBadPrice);
-  assert(ob.DepthAt(OrderSide::kBuy, Price{0}) == Quantity{0});
+  ASSERT_EQ(result.error(), RejectReason::kBadPrice);
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{0}), Quantity{0});
 }
 
 TEST(OrderBook, CancelRestingOrder) {
@@ -72,16 +72,16 @@ TEST(OrderBook, CancelRestingOrder) {
                              Quantity{5}, TimeInForce::kGoodTillCancel);
 
   bool cancel_existing = ob.Cancel(result2.value().order_id);
-  assert(cancel_existing == true);
+  ASSERT_TRUE(cancel_existing);
   bool cancel_nonexisting = ob.Cancel(OrderId{999});
-  assert(cancel_nonexisting == false);
+  ASSERT_FALSE(cancel_nonexisting);
 
-  assert(result1.value().status == OrderStatus::kAwaitingFill);
-  assert(result2.value().status == OrderStatus::kAwaitingFill);
-  assert(result3.value().status == OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result1.value().status, OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result2.value().status, OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result3.value().status, OrderStatus::kAwaitingFill);
 
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{5});
-  assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{5});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{5});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{1}), Quantity{5});
 }
 
 TEST(OrderBook, CancelOnlyOrder) {
@@ -89,7 +89,7 @@ TEST(OrderBook, CancelOnlyOrder) {
   auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
                              TimeInForce::kGoodTillCancel);
   ob.Cancel(result1->order_id);
-  assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{1}), Quantity{0});
 }
 
 TEST(OrderBook, AddMarketEmptyBook) {
@@ -98,8 +98,8 @@ TEST(OrderBook, AddMarketEmptyBook) {
   auto result1 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{5});
   auto result2 = ob.AddMarket(UserId{0}, OrderSide::kBuy, Quantity{5});
 
-  assert(result1.error() == RejectReason::kEmptyBookForMarket);
-  assert(result2.error() == RejectReason::kEmptyBookForMarket);
+  ASSERT_EQ(result1.error(), RejectReason::kEmptyBookForMarket);
+  ASSERT_EQ(result2.error(), RejectReason::kEmptyBookForMarket);
 }
 
 /* CROSSING TESTS */
@@ -113,15 +113,15 @@ TEST(OrderBook, CancelFullyTradedOrderFails) {
   auto result3 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
                              Quantity{5}, TimeInForce::kGoodTillCancel);  // A2
 
-  assert(result1.value().status == OrderStatus::kAwaitingFill);
-  assert(result2.value().status == OrderStatus::kImmediateFill);
+  ASSERT_EQ(result1.value().status, OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result2.value().status, OrderStatus::kImmediateFill);
 
   // A1 takes 5 from B1, immediately filling A1. A2 then takes 5 from B1,
   // resulting in A2 being immediately filled and removing B1 from the book.
-  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});
 
-  assert(ob.Cancel(result1->order_id) == false);
+  ASSERT_FALSE(ob.Cancel(result1->order_id));
 }
 
 TEST(OrderBook, AddLimitCrossCaseImmediateFill) {
@@ -131,12 +131,12 @@ TEST(OrderBook, AddLimitCrossCaseImmediateFill) {
   auto result2 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
                              Quantity{5}, TimeInForce::kGoodTillCancel);  // A1
 
-  assert(result1.value().status == OrderStatus::kAwaitingFill);
-  assert(result2.value().status == OrderStatus::kImmediateFill);
+  ASSERT_EQ(result1.value().status, OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result2.value().status, OrderStatus::kImmediateFill);
 
   // A1 takes 5 from B1 leaving B1 with 5 unfilled
-  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{5});
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{5});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});
 }
 
 TEST(OrderBook, AddLimitCrossCasePartialFill) {
@@ -156,15 +156,15 @@ TEST(OrderBook, AddLimitCrossCasePartialFill) {
    * 5:  B2(2)
    */
 
-  assert(result1.value().status == OrderStatus::kAwaitingFill);
-  assert(result2.value().status == OrderStatus::kAwaitingFill);
-  assert(result3.value().status == OrderStatus::kPartialFill);
+  ASSERT_EQ(result1.value().status, OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result2.value().status, OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result3.value().status, OrderStatus::kPartialFill);
 
   // A1 takes 10 from B1, resulting in B1 being removed from the book and
   // leaving A1 with 10 unfilled. B2 is untouched, resting in the book.
-  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kBuy, Price{5}) == Quantity{2});
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{10});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{5}), Quantity{2});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{10});
 }
 
 TEST(OrderBook, AddLimitCrossCaseMultipleLevels) {
@@ -185,15 +185,15 @@ TEST(OrderBook, AddLimitCrossCaseMultipleLevels) {
    * 10: A2(5)
    */
 
-  assert(result1.value().status == OrderStatus::kAwaitingFill);
-  assert(result2.value().status == OrderStatus::kAwaitingFill);
-  assert(result3.value().status == OrderStatus::kImmediateFill);
+  ASSERT_EQ(result1.value().status, OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result2.value().status, OrderStatus::kAwaitingFill);
+  ASSERT_EQ(result3.value().status, OrderStatus::kImmediateFill);
 
   // B1 takes 5 from A2, resulting in A2 being removed from the book.
   // B1 takes 5 from A1, filling B1. A1 is left with 5 unfilled.
-  assert(ob.DepthAt(OrderSide::kSell, Price{15}) == Quantity{5});
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kBuy, Price{20}) == Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{15}), Quantity{5});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{20}), Quantity{0});
 }
 
 TEST(OrderBook, AddMarketSingleSellImmediateFill) {
@@ -201,14 +201,14 @@ TEST(OrderBook, AddMarketSingleSellImmediateFill) {
   auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{10},
                              Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
 
-  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{10});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{10});
 
   auto result2 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{5});  // A1
 
-  assert(result2->remaining_qty == Quantity{0});
+  ASSERT_EQ(result2->remaining_qty, Quantity{0});
 
-  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{5});
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{5});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});
 }
 
 TEST(OrderBook, AddMarketSingleSellDiscardUnfilled) {
@@ -216,14 +216,14 @@ TEST(OrderBook, AddMarketSingleSellDiscardUnfilled) {
   auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{10},
                              Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
 
-  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{10});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{10});
 
   auto result2 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{50});  // A1
 
-  assert(result2->remaining_qty == Quantity{40});
+  ASSERT_EQ(result2->remaining_qty, Quantity{40});
 
-  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});
 }
 
 TEST(OrderBook, AddMarketSingleSellMultipleLevels) {
@@ -233,17 +233,17 @@ TEST(OrderBook, AddMarketSingleSellMultipleLevels) {
   auto result2 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{8}, Quantity{10},
                              TimeInForce::kGoodTillCancel);  // B2
 
-  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{10});
-  assert(ob.DepthAt(OrderSide::kBuy, Price{8}) == Quantity{10});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{10});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{8}), Quantity{10});
 
   auto result3 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{50});  // A1
 
-  assert(result3->remaining_qty == Quantity{30});
+  ASSERT_EQ(result3->remaining_qty, Quantity{30});
 
-  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kBuy, Price{8}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kSell, Price{8}) == Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{8}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{8}), Quantity{0});
 }
 
 TEST(OrderBook, AddMarketSingleBuyMultipleLevels) {
@@ -253,15 +253,15 @@ TEST(OrderBook, AddMarketSingleBuyMultipleLevels) {
   auto result2 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{8},
                              Quantity{10}, TimeInForce::kGoodTillCancel);  // A2
 
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{10});
-  assert(ob.DepthAt(OrderSide::kSell, Price{8}) == Quantity{10});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{10});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{8}), Quantity{10});
 
   auto result3 = ob.AddMarket(UserId{0}, OrderSide::kBuy, Quantity{50});  // B1
 
-  assert(result3->remaining_qty == Quantity{30});
+  ASSERT_EQ(result3->remaining_qty, Quantity{30});
 
-  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kSell, Price{8}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
-  assert(ob.DepthAt(OrderSide::kBuy, Price{8}) == Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{8}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{0});
+  ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{8}), Quantity{0});
 }
