@@ -84,6 +84,16 @@ TEST(OrderBook, CancelRestingOrder) {
   assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{5});
 }
 
+TEST(OrderBook, AddMarketEmptyBook) {
+  OrderBook ob = OrderBook();
+
+  auto result1 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{5});
+  auto result2 = ob.AddMarket(UserId{0}, OrderSide::kBuy, Quantity{5});
+
+  assert(result1.error() == RejectReason::kEmptyBookForMarket);
+  assert(result2.error() == RejectReason::kEmptyBookForMarket);
+}
+
 /* CROSSING TESTS */
 
 TEST(OrderBook, CancelFullyTradedOrderFails) {
@@ -171,9 +181,41 @@ TEST(OrderBook, AddLimitCrossCaseMultipleLevels) {
   assert(result2.value().status == OrderStatus::kAwaitingFill);
   assert(result3.value().status == OrderStatus::kImmediateFill);
 
-  // B1 takes 5 from A2, resulting in A2 being removed from the book. B1 takes 5
-  // from A1 and filling B1. A1 is left with 5 unfilled.
+  // B1 takes 5 from A2, resulting in A2 being removed from the book.
+  // B1 takes 5 from A1, filling B1. A1 is left with 5 unfilled.
   assert(ob.DepthAt(OrderSide::kSell, Price{15}) == Quantity{5});
   assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
   assert(ob.DepthAt(OrderSide::kBuy, Price{20}) == Quantity{0});
+}
+
+TEST(OrderBook, AddMarketSingleSellImmediateFill) {
+  OrderBook ob = OrderBook();
+  auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{10},
+                             Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
+
+  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{10});
+
+  auto result2 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{5});  // A1
+
+  assert(result2->immediate_trades.size() == 1);
+  assert(result2->remaining_qty == Quantity{0});
+
+  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{5});
+  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+}
+
+TEST(OrderBook, AddMarketSingleSellDiscardUnfilled) {
+  OrderBook ob = OrderBook();
+  auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{10},
+                             Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
+
+  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{10});
+
+  auto result2 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{50});  // A1
+
+  assert(result2->immediate_trades.size() == 1);
+  assert(result2->remaining_qty == Quantity{40});
+
+  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
 }

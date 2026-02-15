@@ -106,6 +106,13 @@ MatchResult OrderBook::Match(OrderSide side, Price best_value,
                      .filled_all = qty_unfilled == Quantity{0}};
 }
 
+AddResult OrderBook::AddMarket(UserId user_id, OrderSide side, Quantity qty) {
+  (void)user_id;
+  (void)side;
+  (void)qty;
+  return tl::unexpected<RejectReason>(RejectReason::kEmptyBookForMarket);
+}
+
 AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
                               Quantity qty, TimeInForce tif) {
   if (qty == Quantity{0}) {

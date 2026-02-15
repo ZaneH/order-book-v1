@@ -55,8 +55,7 @@ class OrderBook {
   AddResult AddLimit(UserId user_id, OrderSide side, Price price, Quantity qty,
                      TimeInForce tif);
   // Postconditions: FIFO preserved, empty levels removed, no crossed book
-  AddResult AddMarket(UserId user_id, OrderSide side, Quantity qty,
-                      TimeInForce tif);
+  AddResult AddMarket(UserId user_id, OrderSide side, Quantity qty);
 
   // Cancelling an order is O(1) because the location of every order is stored
   // in the order_id_index_ class data member as a Handle. Cancelling an order
