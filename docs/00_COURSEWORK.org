@@ -173,7 +173,7 @@ Cancel is where the handle design earns its keep.
 Market and IOC are similar mechanically: consume liquidity, maybe leave nothing.
 
 ** tasks
-- [ ] Implement add_market(user, side, qty):
+- [X] Implement add_market(user, side, qty):
   - match against opposite side starting at best
   - never insert into id_index
   - return trades + leftover qty (if book empties)

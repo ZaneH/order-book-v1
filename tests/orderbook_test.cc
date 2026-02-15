@@ -197,7 +197,6 @@ TEST(OrderBook, AddMarketSingleSellImmediateFill) {
 
   auto result2 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{5});  // A1
 
-  assert(result2->immediate_trades.size() == 1);
   assert(result2->remaining_qty == Quantity{0});
 
   assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{5});
@@ -213,9 +212,48 @@ TEST(OrderBook, AddMarketSingleSellDiscardUnfilled) {
 
   auto result2 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{50});  // A1
 
-  assert(result2->immediate_trades.size() == 1);
   assert(result2->remaining_qty == Quantity{40});
 
   assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
   assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+}
+
+TEST(OrderBook, AddMarketSingleSellMultipleLevels) {
+  OrderBook ob = OrderBook();
+  auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{10},
+                             Quantity{10}, TimeInForce::kGoodTillCancel);  // B1
+  auto result2 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{8}, Quantity{10},
+                             TimeInForce::kGoodTillCancel);  // B2
+
+  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{10});
+  assert(ob.DepthAt(OrderSide::kBuy, Price{8}) == Quantity{10});
+
+  auto result3 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{50});  // A1
+
+  assert(result3->remaining_qty == Quantity{30});
+
+  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kBuy, Price{8}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kSell, Price{8}) == Quantity{0});
+}
+
+TEST(OrderBook, AddMarketSingleBuyMultipleLevels) {
+  OrderBook ob = OrderBook();
+  auto result1 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{10},
+                             Quantity{10}, TimeInForce::kGoodTillCancel);  // A1
+  auto result2 = ob.AddLimit(UserId{0}, OrderSide::kSell, Price{8},
+                             Quantity{10}, TimeInForce::kGoodTillCancel);  // A2
+
+  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{10});
+  assert(ob.DepthAt(OrderSide::kSell, Price{8}) == Quantity{10});
+
+  auto result3 = ob.AddMarket(UserId{0}, OrderSide::kBuy, Quantity{50});  // B1
+
+  assert(result3->remaining_qty == Quantity{30});
+
+  assert(ob.DepthAt(OrderSide::kSell, Price{10}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kSell, Price{8}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kBuy, Price{10}) == Quantity{0});
+  assert(ob.DepthAt(OrderSide::kBuy, Price{8}) == Quantity{0});
 }

@@ -1,6 +1,8 @@
 #ifndef INCLUDE_ORDERS_H_
 #define INCLUDE_ORDERS_H_
 
+#include <optional>
+
 #include "types.h"
 
 struct Order {
@@ -9,9 +11,9 @@ struct Order {
   OrderSide side;
 
   Quantity qty;
-  Price price;
+  std::optional<Price> price;
 
-  TimeInForce tif;
+  std::optional<TimeInForce> tif;
 };
 
 #endif

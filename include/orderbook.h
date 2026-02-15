@@ -63,10 +63,10 @@ class OrderBook {
   // store orders.
   bool Cancel(OrderId order_id);
 
-  std::optional<Price> BestBid();
-  std::optional<Price> BestAsk();
+  std::optional<Price> BestBid() const;
+  std::optional<Price> BestAsk() const;
 
-  Quantity DepthAt(OrderSide side, Price price);
+  Quantity DepthAt(OrderSide side, Price price) const;
 
   friend std::ostream& operator<<(std::ostream& os, const OrderBook& book) {
     os << "Book: ";
@@ -109,7 +109,8 @@ class OrderBook {
 
   std::unordered_map<OrderId, Handle, StrongIdHash<OrderIdTag>> order_id_index_;
 
-  MatchResult Match(OrderSide side, Price value, const Order& order);
+  MatchResult Match(OrderSide side, Price value, const Order& order,
+                    bool is_market);
   void AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
                       const Order& order);
 

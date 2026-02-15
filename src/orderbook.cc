@@ -10,19 +10,19 @@
 #include <unordered_map>
 #include <utility>
 
-Quantity OrderBook::DepthAt(OrderSide side, Price price) {
+Quantity OrderBook::DepthAt(OrderSide side, Price price) const {
   auto& book_side = side == OrderSide::kBuy ? bids_ : asks_;
   auto it = book_side.find(price);
   if (it == book_side.end()) return Quantity{0};
   return it->second.aggregate_qty;
 }
 
-std::optional<Price> OrderBook::BestBid() {
+std::optional<Price> OrderBook::BestBid() const {
   if (bids_.empty()) return std::nullopt;
   return bids_.rbegin()->first;
 }
 
-std::optional<Price> OrderBook::BestAsk() {
+std::optional<Price> OrderBook::BestAsk() const {
   if (asks_.empty()) return std::nullopt;
   return asks_.begin()->first;
 }
@@ -47,7 +47,7 @@ void OrderBook::AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
 }
 
 MatchResult OrderBook::Match(OrderSide side, Price best_value,
-                             const Order& order) {
+                             const Order& order, bool is_market) {
   // TODO: tif=kImmediateFill requires a different impl
   std::vector<Trade> trades{};
   std::optional<Order> unfilled{};
@@ -65,10 +65,11 @@ MatchResult OrderBook::Match(OrderSide side, Price best_value,
       auto next_best = (side == OrderSide::kBuy) ? BestAsk() : BestBid();
       bool will_accept = (side == OrderSide::kBuy) ? next_best <= order.price
                                                    : next_best >= order.price;
-      if (will_accept && next_best.has_value()) {
+      if ((is_market && next_best.has_value()) ||
+          (will_accept && next_best.has_value())) {
         Order reduced_order = order;
         reduced_order.qty = qty_unfilled;
-        return Match(side, next_best.value(), reduced_order);
+        return Match(side, next_best.value(), reduced_order, is_market);
       } else {
         unfilled = order;
         unfilled->qty = qty_unfilled;
@@ -90,7 +91,7 @@ MatchResult OrderBook::Match(OrderSide side, Price best_value,
         .match_id = MatchId{match_id_},
         .order_id = order.id,
         .qty = fill_amount,
-        .price = first_in_level.price,
+        .price = first_in_level.price.value(),
     });
 
     if (first_in_level.qty == Quantity{0}) {
@@ -107,9 +108,49 @@ MatchResult OrderBook::Match(OrderSide side, Price best_value,
 }
 
 AddResult OrderBook::AddMarket(UserId user_id, OrderSide side, Quantity qty) {
-  (void)user_id;
-  (void)side;
-  (void)qty;
+  if (qty == Quantity{0}) {
+    return tl::unexpected<RejectReason>(RejectReason::kBadQty);
+  }
+
+  auto best_value = (side == OrderSide::kBuy) ? BestAsk() : BestBid();
+  if (!best_value.has_value()) {
+    return tl::unexpected<RejectReason>(RejectReason::kEmptyBookForMarket);
+  }
+
+  auto const& order = Order{.id = OrderId{order_id_},
+                            .creator_id = user_id,
+                            .side = side,
+                            .qty = qty,
+                            .price = std::nullopt,
+                            .tif = std::nullopt};
+
+  MatchResult cross_match{};
+  if (side == OrderSide::kBuy) {
+    cross_match = Match(side, best_value.value(), order, true);
+  } else if (side == OrderSide::kSell) {
+    cross_match = Match(side, best_value.value(), order, true);
+  }
+
+  if (cross_match.unfilled.has_value()) {
+    return AddResultPayload{
+        .order_id = order.id,
+        .status = OrderStatus::kPartialFill,
+        .immediate_trades = cross_match.trades,
+        .remaining_qty = cross_match.unfilled->qty,
+    };
+  } else if (cross_match.filled_all) {
+    return AddResultPayload{
+        .order_id = order.id,
+        .status = OrderStatus::kImmediateFill,
+        .immediate_trades = cross_match.trades,
+        .remaining_qty = Quantity{0},
+    };
+  }
+
+#ifndef NDEBUG
+  Verify();
+#endif
+
   return tl::unexpected<RejectReason>(RejectReason::kEmptyBookForMarket);
 }
 
@@ -133,18 +174,15 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
 
   auto* book_side = (side == OrderSide::kBuy) ? &bids_ : &asks_;
 
-  auto best_ask = BestAsk();
-  auto best_bid = BestBid();
+  auto best_value = (side == OrderSide::kBuy) ? BestAsk() : BestBid();
 
   MatchResult cross_match{};
-  if (side == OrderSide::kBuy && best_ask.has_value() &&
-      order.price >= best_ask.value()) {
-    std::cerr << "Crossing case for incoming Buy" << std::endl;
-    cross_match = Match(side, best_ask.value(), order);
-  } else if (side == OrderSide::kSell && best_bid.has_value() &&
-             order.price <= best_bid.value()) {
-    std::cerr << "Crossing case for incoming Sell" << std::endl;
-    cross_match = Match(side, best_bid.value(), order);
+  if (side == OrderSide::kBuy && best_value.has_value() &&
+      order.price >= best_value.value()) {
+    cross_match = Match(side, best_value.value(), order, false);
+  } else if (side == OrderSide::kSell && best_value.has_value() &&
+             order.price <= best_value.value()) {
+    cross_match = Match(side, best_value.value(), order, false);
   }
 
   if (cross_match.unfilled.has_value()) {
