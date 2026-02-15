@@ -42,8 +42,6 @@ void OrderBook::AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
   order_id_index_.emplace(
       order.id,
       Handle{.side = side, .level_it = level_it, .order_it = order_it});
-
-  order_id_++;
 }
 
 MatchResult OrderBook::Match(OrderSide side, Price best_value,
@@ -88,7 +86,7 @@ MatchResult OrderBook::Match(OrderSide side, Price best_value,
     trades.emplace_back(Trade{
         .maker_id = first_in_level.creator_id,
         .taker_id = order.creator_id,
-        .match_id = MatchId{match_id_},
+        .match_id = MatchId{match_id_++},
         .order_id = order.id,
         .qty = fill_amount,
         .price = first_in_level.price.value(),
@@ -117,7 +115,7 @@ AddResult OrderBook::AddMarket(UserId user_id, OrderSide side, Quantity qty) {
     return tl::unexpected<RejectReason>(RejectReason::kEmptyBookForMarket);
   }
 
-  auto const& order = Order{.id = OrderId{order_id_},
+  auto const& order = Order{.id = OrderId{order_id_++},
                             .creator_id = user_id,
                             .side = side,
                             .qty = qty,
@@ -164,7 +162,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
   }
 
   auto const& order = Order{
-      .id = OrderId{order_id_},
+      .id = OrderId{order_id_++},
       .creator_id = user_id,
       .side = side,
       .qty = qty,
