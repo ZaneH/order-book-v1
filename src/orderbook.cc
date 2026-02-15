@@ -222,11 +222,20 @@ bool OrderBook::Cancel(OrderId id) {
     return false;
   }
   Handle& handle = handle_it->second;
-  Level& level = handle.level_it->second;
+  auto& level_it = handle.level_it;
+  Level& level = level_it->second;
 
   level.aggregate_qty -= handle.order_it->qty;
   level.orders.erase(handle.order_it);
+  if (level.orders.empty()) {
+    BookSide* book_side = (handle.side == OrderSide::kBuy) ? &bids_ : &asks_;
+    book_side->erase(level_it);
+  }
+
   order_id_index_.erase(handle_it);
+#ifndef NDEBUG
+  Verify();
+#endif
   return true;
 }
 

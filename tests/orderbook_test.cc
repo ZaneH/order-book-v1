@@ -84,6 +84,14 @@ TEST(OrderBook, CancelRestingOrder) {
   assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{5});
 }
 
+TEST(OrderBook, CancelOnlyOrder) {
+  OrderBook ob = OrderBook();
+  auto result1 = ob.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
+                             TimeInForce::kGoodTillCancel);
+  ob.Cancel(result1->order_id);
+  assert(ob.DepthAt(OrderSide::kBuy, Price{1}) == Quantity{0});
+}
+
 TEST(OrderBook, AddMarketEmptyBook) {
   OrderBook ob = OrderBook();
 
