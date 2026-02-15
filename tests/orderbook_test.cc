@@ -181,8 +181,8 @@ TEST(OrderBook, AddLimitCrossCaseMultipleLevels) {
    * Incoming: B1 wants to buy 10 @ 20
    *
    * [asks]
-   * 15: A1(10)
    * 10: A2(5)
+   * 15: A1(10)
    */
 
   ASSERT_EQ(result1.value().status, OrderStatus::kAwaitingFill);
@@ -238,8 +238,19 @@ TEST(OrderBook, AddMarketSingleSellMultipleLevels) {
 
   auto result3 = ob.AddMarket(UserId{0}, OrderSide::kSell, Quantity{50});  // A1
 
+  /*
+   * Incoming: A1 wants to sell 50 @ Market
+   *
+   * [bids]
+   * 10: B1(10)
+   * 8:  B2(10)
+   */
+
   ASSERT_EQ(result3->remaining_qty, Quantity{30});
 
+  // A1 takes 10 from B1, resulting in B1 being removed from the book.
+  // A1 takes 10 from B2, resulting in B2 being removed from the book.
+  // A1 is left with 30 unfilled and the remaining is discarded.
   ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{10}), Quantity{0});
   ASSERT_EQ(ob.DepthAt(OrderSide::kBuy, Price{8}), Quantity{0});
   ASSERT_EQ(ob.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});

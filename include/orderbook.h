@@ -104,13 +104,15 @@ class OrderBook {
   std::map<Price, Level> bids_;
   std::map<Price, Level> asks_;
 
-  uint32_t order_id_;
-  uint32_t match_id_;
+  uint32_t order_id_ = 0;
+  uint32_t match_id_ = 0;
 
   std::unordered_map<OrderId, Handle, StrongIdHash<OrderIdTag>> order_id_index_;
 
-  MatchResult Match(OrderSide side, Price value, const Order& order,
+  MatchResult Match(OrderSide side, Price best_value, const Order& order,
                     bool is_market);
+  void Reduce(Level& level, Quantity& unfilled_qty, const Order& order,
+              std::vector<Trade>& trades);
   void AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
                       const Order& order);
 

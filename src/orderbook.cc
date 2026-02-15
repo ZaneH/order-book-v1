@@ -2,11 +2,9 @@
 
 #include <cassert>
 #include <expected/expected.hpp>
-#include <iostream>
 #include <iterator>
 #include <map>
 #include <optional>
-#include <ostream>
 #include <unordered_map>
 #include <utility>
 
@@ -44,75 +42,77 @@ void OrderBook::AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
       Handle{.side = side, .level_it = level_it, .order_it = order_it});
 }
 
-MatchResult OrderBook::Match(OrderSide side, Price best_value,
+void OrderBook::Reduce(Level& level, Quantity& unfilled_qty, const Order& order,
+                       std::vector<Trade>& trades) {
+  Order& first_in_level = level.orders.front();
+  Quantity fill_amount =
+      first_in_level.qty < unfilled_qty ? first_in_level.qty : unfilled_qty;
+
+  first_in_level.qty -= fill_amount;
+  level.aggregate_qty -= fill_amount;
+  unfilled_qty -= fill_amount;
+
+  trades.emplace_back(Trade{
+      .maker_id = first_in_level.creator_id,
+      .taker_id = order.creator_id,
+      .match_id = MatchId{match_id_++},
+      .order_id = order.id,
+      .qty = fill_amount,
+      .price = first_in_level.price.value(),
+  });
+
+  if (first_in_level.qty == Quantity{0}) {
+    auto& handle_it = order_id_index_.at(first_in_level.id);
+    auto order_it = handle_it.order_it;
+    order_id_index_.erase(first_in_level.id);
+    level.orders.erase(order_it);
+  }
+}
+
+MatchResult OrderBook::Match(OrderSide side, Price best_price,
                              const Order& order, bool is_market) {
-  // TODO: tif=kImmediateFill requires a different impl
   std::vector<Trade> trades{};
   std::optional<Order> unfilled{};
 
   BookSide* other_side = (side == OrderSide::kBuy) ? &asks_ : &bids_;
 
-  Quantity qty_unfilled = order.qty;
-  auto& level = other_side->at(best_value);
-  while (qty_unfilled > Quantity{0}) {
-    if (level.orders.empty()) {
-      other_side->erase(best_value);
-    }
+  Quantity unfilled_qty = order.qty;
+  auto* level = &other_side->at(best_price);
 
-    if (!other_side->contains(best_value)) {
+  while (unfilled_qty > Quantity{0}) {
+    if (!other_side->contains(best_price)) {
       auto next_best = (side == OrderSide::kBuy) ? BestAsk() : BestBid();
       bool will_accept = (side == OrderSide::kBuy) ? next_best <= order.price
                                                    : next_best >= order.price;
-      if ((is_market && next_best.has_value()) ||
-          (will_accept && next_best.has_value())) {
-        Order reduced_order = order;
-        reduced_order.qty = qty_unfilled;
-        return Match(side, next_best.value(), reduced_order, is_market);
+      if ((is_market || will_accept) && next_best.has_value()) {
+        level = &other_side->at(next_best.value());
+
+        Reduce(*level, unfilled_qty, order, trades);
+        if (level->orders.empty()) {
+          other_side->erase(next_best.value());
+        }
+        continue;
       } else {
         unfilled = order;
-        unfilled->qty = qty_unfilled;
+        unfilled->qty = unfilled_qty;
         break;
       }
     }
 
-    Order& first_in_level = level.orders.front();
-    Quantity fill_amount =
-        first_in_level.qty < qty_unfilled ? first_in_level.qty : qty_unfilled;
-
-    first_in_level.qty -= fill_amount;
-    level.aggregate_qty -= fill_amount;
-    qty_unfilled -= fill_amount;
-
-    trades.emplace_back(Trade{
-        .maker_id = first_in_level.creator_id,
-        .taker_id = order.creator_id,
-        .match_id = MatchId{match_id_++},
-        .order_id = order.id,
-        .qty = fill_amount,
-        .price = first_in_level.price.value(),
-    });
-
-    if (first_in_level.qty == Quantity{0}) {
-      auto& handle_it = order_id_index_.at(first_in_level.id);
-      auto order_it = handle_it.order_it;
-      order_id_index_.erase(first_in_level.id);
-      level.orders.erase(order_it);
+    Reduce(*level, unfilled_qty, order, trades);
+    if (level->orders.empty()) {
+      other_side->erase(best_price);
     }
   }
 
   return MatchResult{.trades = trades,
                      .unfilled = unfilled,
-                     .filled_all = qty_unfilled == Quantity{0}};
+                     .filled_all = unfilled_qty == Quantity{0}};
 }
 
 AddResult OrderBook::AddMarket(UserId user_id, OrderSide side, Quantity qty) {
   if (qty == Quantity{0}) {
     return tl::unexpected<RejectReason>(RejectReason::kBadQty);
-  }
-
-  auto best_value = (side == OrderSide::kBuy) ? BestAsk() : BestBid();
-  if (!best_value.has_value()) {
-    return tl::unexpected<RejectReason>(RejectReason::kEmptyBookForMarket);
   }
 
   auto const& order = Order{.id = OrderId{order_id_++},
@@ -121,6 +121,10 @@ AddResult OrderBook::AddMarket(UserId user_id, OrderSide side, Quantity qty) {
                             .qty = qty,
                             .price = std::nullopt,
                             .tif = std::nullopt};
+  auto best_value = (side == OrderSide::kBuy) ? BestAsk() : BestBid();
+  if (!best_value.has_value()) {
+    return tl::unexpected<RejectReason>(RejectReason::kEmptyBookForMarket);
+  }
 
   MatchResult cross_match{};
   if (side == OrderSide::kBuy) {
@@ -247,13 +251,13 @@ void VerifyAggregateQtyPerLevel(BookSide book_side) {
     }
 
     assert(level.aggregate_qty == level_qty_sum);
-    assert(level.orders.size() != 0);
+    assert(!level.orders.empty());
   }
 }
 
 void VerifyNoEmptyLevelsOrEmptyOrders(BookSide book_side) {
   for (auto const& [price, level] : book_side) {
-    assert(level.orders.size() != 0);
+    assert(!level.orders.empty());
 
     for (auto const order : level.orders) {
       assert(order.qty != Quantity{0});
