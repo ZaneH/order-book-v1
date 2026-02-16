@@ -33,8 +33,10 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(orderbook_test
-  src/orderbook.cc
-  tests/orderbook_test.cc
+  tests/orderbook_cancel_test.cc
+  tests/orderbook_layout_test.cc
+  tests/orderbook_match_test.cc
+  tests/orderbook_reject_test.cc
 )
 
 target_link_libraries(orderbook_test
@@ -59,6 +61,11 @@ target_include_directories(tl_expected
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party
 )
 
+target_include_directories(orderbook
+  INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
 target_compile_features(project_defaults
   INTERFACE
   cxx_std_20
@@ -75,4 +82,4 @@ target_link_options(project_defaults
 
 target_link_libraries(clob_cli PRIVATE project_defaults tl_expected)
 target_link_libraries(orderbook PRIVATE project_defaults tl_expected)
-target_link_libraries(orderbook_test PRIVATE project_defaults tl_expected)
+target_link_libraries(orderbook_test PRIVATE project_defaults tl_expected orderbook)
