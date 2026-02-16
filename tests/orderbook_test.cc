@@ -35,6 +35,28 @@ AddResult OrderBookTest::AddLimitOk(UserId user_id, OrderSide side, Price price,
   return result;
 }
 
+AddResult OrderBookTest::AddMarketOk(UserId user_id, OrderSide side,
+                                     Quantity qty) {
+  AddResult result = ob_.AddMarket(user_id, side, qty);
+  EXPECT_TRUE(result.has_value());
+  return result;
+}
+
+AddResult OrderBookTest::AddLimitError(UserId user_id, OrderSide side,
+                                       Price price, Quantity qty,
+                                       TimeInForce tif) {
+  AddResult result = ob_.AddLimit(user_id, side, price, qty, tif);
+  EXPECT_FALSE(result.has_value());
+  return result;
+}
+
+AddResult OrderBookTest::AddMarketError(UserId user_id, OrderSide side,
+                                        Quantity qty) {
+  AddResult result = ob_.AddMarket(user_id, side, qty);
+  EXPECT_FALSE(result.has_value());
+  return result;
+}
+
 void OrderBookTest::AssertAddResult(const AddResult& result, OrderStatus status,
                                     Quantity remaining, size_t n_trades) {
   ASSERT_TRUE(result.has_value());

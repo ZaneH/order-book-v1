@@ -3,8 +3,8 @@
 namespace order_book_v1 {
 TEST_F(OrderBookTest, AddLimitBuyWithBadQty) {
   // Act
-  auto result = ob_.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{0},
-                             TimeInForce::kGoodTillCancel);
+  auto result = AddLimitError(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{0},
+                              TimeInForce::kGoodTillCancel);
 
   // Assert
   EXPECT_EQ(result.error(), RejectReason::kBadQty);
@@ -13,8 +13,8 @@ TEST_F(OrderBookTest, AddLimitBuyWithBadQty) {
 
 TEST_F(OrderBookTest, AddLimitBuyWithBadPrice) {
   // Act
-  auto result = ob_.AddLimit(UserId{0}, OrderSide::kBuy, Price{0}, Quantity{5},
-                             TimeInForce::kGoodTillCancel);
+  auto result = AddLimitError(UserId{0}, OrderSide::kBuy, Price{0}, Quantity{5},
+                              TimeInForce::kGoodTillCancel);
 
   // Assert
   EXPECT_EQ(result.error(), RejectReason::kBadPrice);
@@ -23,8 +23,8 @@ TEST_F(OrderBookTest, AddLimitBuyWithBadPrice) {
 
 TEST_F(OrderBookTest, AddMarketWithEmptyBook) {
   // Act
-  auto result1 = ob_.AddMarket(UserId{0}, OrderSide::kSell, Quantity{5});
-  auto result2 = ob_.AddMarket(UserId{0}, OrderSide::kBuy, Quantity{5});
+  auto result1 = AddMarketError(UserId{0}, OrderSide::kSell, Quantity{5});
+  auto result2 = AddMarketError(UserId{0}, OrderSide::kBuy, Quantity{5});
 
   // Assert
   EXPECT_EQ(result1.error(), RejectReason::kEmptyBookForMarket);

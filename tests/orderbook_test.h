@@ -25,6 +25,10 @@ class OrderBookTest : public testing::Test {
                        Quantity remaining, size_t n_trades);
   AddResult AddLimitOk(UserId user_id, OrderSide side, Price price,
                        Quantity qty, TimeInForce tif);
+  AddResult AddLimitError(UserId user_id, OrderSide side, Price price,
+                          Quantity qty, TimeInForce tif);
+  AddResult AddMarketOk(UserId user_id, OrderSide side, Quantity qty);
+  AddResult AddMarketError(UserId user_id, OrderSide side, Quantity qty);
 };
 }  // namespace order_book_v1
 

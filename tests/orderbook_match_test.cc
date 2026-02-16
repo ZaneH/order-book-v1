@@ -1,7 +1,7 @@
 #include "orderbook_test.h"
 
 namespace order_book_v1 {
-TEST_F(OrderBookTest, AddLimitCrossingImmediateFill) {
+TEST_F(OrderBookTest, AddLimitCrossingSellImmediateFill) {
   // Arrange
   ArrangeBidLevels({{Price{10}, Quantity{10}}});
 
@@ -16,7 +16,7 @@ TEST_F(OrderBookTest, AddLimitCrossingImmediateFill) {
   EXPECT_EQ(ob_.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});
 }
 
-TEST_F(OrderBookTest, AddLimitCrossingPartialFill) {
+TEST_F(OrderBookTest, AddLimitCrossingSellPartialFill) {
   // Arrange
   ArrangeBidLevels({{Price{10}, Quantity{10}}, {Price{5}, Quantity{2}}});
 
@@ -41,7 +41,7 @@ TEST_F(OrderBookTest, AddLimitCrossingPartialFill) {
   EXPECT_EQ(ob_.DepthAt(OrderSide::kSell, Price{10}), Quantity{10});
 }
 
-TEST_F(OrderBookTest, AddLimitCrossingMultipleLevels) {
+TEST_F(OrderBookTest, AddLimitCrossingBuyMultipleLevels) {
   // Arrange
   ArrangeAskLevels({{Price{15}, Quantity{10}}, {Price{10}, Quantity{5}}});
 
@@ -71,7 +71,7 @@ TEST_F(OrderBookTest, AddMarketSingleSellImmediateFill) {
   ArrangeBidLevels({{Price{10}, Quantity{10}}});
 
   // Act
-  auto result = ob_.AddMarket(UserId{0}, OrderSide::kSell, Quantity{5});
+  auto result = AddMarketOk(UserId{0}, OrderSide::kSell, Quantity{5});
 
   // Assert
   EXPECT_EQ(result->status, OrderStatus::kImmediateFill);
@@ -86,7 +86,7 @@ TEST_F(OrderBookTest, AddMarketSingleSellDiscardUnfilled) {
   ArrangeBidLevels({{Price{10}, Quantity{10}}});
 
   // Act
-  auto result = ob_.AddMarket(UserId{0}, OrderSide::kSell, Quantity{50});
+  auto result = AddMarketOk(UserId{0}, OrderSide::kSell, Quantity{50});
 
   // Assert
   AssertAddResult(result, OrderStatus::kPartialFill, Quantity{40}, 1);
@@ -99,7 +99,7 @@ TEST_F(OrderBookTest, AddMarketSingleSellMultipleLevels) {
   ArrangeBidLevels({{Price{10}, Quantity{10}}, {Price{8}, Quantity{10}}});
 
   // Act
-  auto result = ob_.AddMarket(UserId{0}, OrderSide::kSell, Quantity{50});
+  auto result = AddMarketOk(UserId{0}, OrderSide::kSell, Quantity{50});
 
   /*
    * Incoming: A1 wants to sell 50 @ Market
@@ -125,7 +125,7 @@ TEST_F(OrderBookTest, AddMarketSingleBuyMultipleLevels) {
   ArrangeAskLevels({{Price{10}, Quantity{10}}, {Price{8}, Quantity{10}}});
 
   // Act
-  auto result = ob_.AddMarket(UserId{0}, OrderSide::kBuy, Quantity{50});
+  auto result = AddMarketOk(UserId{0}, OrderSide::kBuy, Quantity{50});
 
   // Assert
   AssertAddResult(result, OrderStatus::kPartialFill, Quantity{30}, 2);
