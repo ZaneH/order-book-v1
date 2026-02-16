@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <functional>
 
+namespace order_book_v1 {
 enum class OrderSide { kBuy = 0, kSell };
 enum class TimeInForce {
   kGoodTillCancel = 0,
@@ -69,5 +70,6 @@ enum class OrderStatus {
   kImmediateFill,
   kRejected,
 };
+}  // namespace order_book_v1
 
 #endif

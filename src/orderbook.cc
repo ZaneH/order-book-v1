@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <utility>
 
+namespace order_book_v1 {
 Quantity OrderBook::DepthAt(OrderSide side, Price price) const {
   auto& book_side = side == OrderSide::kBuy ? bids_ : asks_;
   auto it = book_side.find(price);
@@ -274,3 +275,4 @@ void OrderBook::Verify() const {
   VerifyNoEmptyLevelsOrEmptyOrders(asks_);
 }
 #endif
+}  // namespace order_book_v1

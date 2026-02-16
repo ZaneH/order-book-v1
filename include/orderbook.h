@@ -14,6 +14,7 @@
 #include "trade.h"
 #include "types.h"
 
+namespace order_book_v1 {
 struct Level {
   Quantity aggregate_qty{};
   std::list<Order> orders;
@@ -121,5 +122,6 @@ class OrderBook {
   void Verify() const;
 #endif
 };
+}  // namespace order_book_v1
 
 #endif

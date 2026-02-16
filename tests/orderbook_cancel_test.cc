@@ -1,5 +1,6 @@
 #include "orderbook_test.h"
 
+namespace order_book_v1 {
 TEST_F(OrderBookTest, CancelRestingOrder) {
   // Arrange
   auto b1 = AddLimitOk(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
@@ -64,3 +65,4 @@ TEST_F(OrderBookTest, CancelFullyTradedOrderFails) {
   EXPECT_EQ(ob_.DepthAt(OrderSide::kBuy, Price{10}), Quantity{0});
   EXPECT_EQ(ob_.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});
 }
+}  // namespace order_book_v1

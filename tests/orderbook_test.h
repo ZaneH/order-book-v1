@@ -9,6 +9,7 @@
 
 #include "types.h"
 
+namespace order_book_v1 {
 using LevelSpec = std::pair<Price, Quantity>;
 
 class OrderBookTest : public testing::Test {
@@ -25,5 +26,6 @@ class OrderBookTest : public testing::Test {
   AddResult AddLimitOk(UserId user_id, OrderSide side, Price price,
                        Quantity qty, TimeInForce tif);
 };
+}  // namespace order_book_v1
 
 #endif

@@ -5,6 +5,7 @@
 
 #include "types.h"
 
+namespace order_book_v1 {
 struct Order {
   OrderId id;
   UserId creator_id;
@@ -15,5 +16,6 @@ struct Order {
 
   std::optional<TimeInForce> tif;
 };
+}  // namespace order_book_v1
 
 #endif

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <vector>
 
+namespace order_book_v1 {
 std::vector<OrderId> OrderBookTest::ArrangeBidLevels(
     std::initializer_list<LevelSpec> levels) {
   std::vector<OrderId> ids{};
@@ -41,3 +42,4 @@ void OrderBookTest::AssertAddResult(const AddResult& result, OrderStatus status,
   EXPECT_EQ(result->remaining_qty, remaining);
   EXPECT_EQ(result->immediate_trades.size(), n_trades);
 }
+}  // namespace order_book_v1

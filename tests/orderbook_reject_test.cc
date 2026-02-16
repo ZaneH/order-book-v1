@@ -1,5 +1,6 @@
 #include "orderbook_test.h"
 
+namespace order_book_v1 {
 TEST_F(OrderBookTest, AddLimitBuyWithBadQty) {
   // Act
   auto result = ob_.AddLimit(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{0},
@@ -29,3 +30,4 @@ TEST_F(OrderBookTest, AddMarketWithEmptyBook) {
   EXPECT_EQ(result1.error(), RejectReason::kEmptyBookForMarket);
   EXPECT_EQ(result2.error(), RejectReason::kEmptyBookForMarket);
 }
+}  // namespace order_book_v1

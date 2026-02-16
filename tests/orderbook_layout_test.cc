@@ -1,5 +1,6 @@
 #include "orderbook_test.h"
 
+namespace order_book_v1 {
 TEST_F(OrderBookTest, AddLimitRestSingleBuy) {
   // Arrange
   auto result = AddLimitOk(UserId{0}, OrderSide::kBuy, Price{1}, Quantity{5},
@@ -33,3 +34,4 @@ TEST_F(OrderBookTest, AddLimitRestMultipleBuySell) {
   EXPECT_EQ(ob_.DepthAt(OrderSide::kSell, Price{10}), Quantity{5});
   EXPECT_EQ(ob_.DepthAt(OrderSide::kBuy, Price{1}), Quantity{10});
 }
+}  // namespace order_book_v1

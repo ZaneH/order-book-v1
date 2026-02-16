@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+namespace order_book_v1 {
 struct Trade {
   UserId maker_id;
   UserId taker_id;
@@ -12,5 +13,6 @@ struct Trade {
   Quantity qty;
   Price price;
 };
+}  // namespace order_book_v1
 
 #endif

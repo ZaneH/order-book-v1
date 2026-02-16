@@ -1,6 +1,7 @@
 #include "orderbook_test.h"
 
-TEST_F(OrderBookTest, AddLimitCrossCaseImmediateFill) {
+namespace order_book_v1 {
+TEST_F(OrderBookTest, AddLimitCrossingImmediateFill) {
   // Arrange
   ArrangeBidLevels({{Price{10}, Quantity{10}}});
 
@@ -15,7 +16,7 @@ TEST_F(OrderBookTest, AddLimitCrossCaseImmediateFill) {
   EXPECT_EQ(ob_.DepthAt(OrderSide::kSell, Price{10}), Quantity{0});
 }
 
-TEST_F(OrderBookTest, AddLimitCrossCasePartialFill) {
+TEST_F(OrderBookTest, AddLimitCrossingPartialFill) {
   // Arrange
   ArrangeBidLevels({{Price{10}, Quantity{10}}, {Price{5}, Quantity{2}}});
 
@@ -40,7 +41,7 @@ TEST_F(OrderBookTest, AddLimitCrossCasePartialFill) {
   EXPECT_EQ(ob_.DepthAt(OrderSide::kSell, Price{10}), Quantity{10});
 }
 
-TEST_F(OrderBookTest, AddLimitCrossCaseMultipleLevels) {
+TEST_F(OrderBookTest, AddLimitCrossingMultipleLevels) {
   // Arrange
   ArrangeAskLevels({{Price{15}, Quantity{10}}, {Price{10}, Quantity{5}}});
 
@@ -133,3 +134,4 @@ TEST_F(OrderBookTest, AddMarketSingleBuyMultipleLevels) {
   EXPECT_EQ(ob_.DepthAt(OrderSide::kBuy, Price{10}), Quantity{0});
   EXPECT_EQ(ob_.DepthAt(OrderSide::kBuy, Price{8}), Quantity{0});
 }
+}  // namespace order_book_v1
