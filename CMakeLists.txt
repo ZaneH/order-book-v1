@@ -33,6 +33,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(orderbook_test
+  tests/orderbook_test.cc
   tests/orderbook_cancel_test.cc
   tests/orderbook_layout_test.cc
   tests/orderbook_match_test.cc

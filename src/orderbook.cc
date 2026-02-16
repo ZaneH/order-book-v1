@@ -42,6 +42,7 @@ void OrderBook::AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
       Handle{.side = side, .level_it = level_it, .order_it = order_it});
 }
 
+// Fills against the front order in level, updates book and trade log
 void OrderBook::Reduce(Level& level, Quantity& unfilled_qty, const Order& order,
                        std::vector<Trade>& trades) {
   Order& first_in_level = level.orders.front();
@@ -62,8 +63,8 @@ void OrderBook::Reduce(Level& level, Quantity& unfilled_qty, const Order& order,
   });
 
   if (first_in_level.qty == Quantity{0}) {
-    auto& handle_it = order_id_index_.at(first_in_level.id);
-    auto order_it = handle_it.order_it;
+    Handle& handle = order_id_index_.at(first_in_level.id);
+    auto order_it = handle.order_it;
     order_id_index_.erase(first_in_level.id);
     level.orders.erase(order_it);
   }
@@ -77,7 +78,7 @@ MatchResult OrderBook::Match(OrderSide side, Price best_price,
   BookSide* other_side = (side == OrderSide::kBuy) ? &asks_ : &bids_;
 
   Quantity unfilled_qty = order.qty;
-  auto* level = &other_side->at(best_price);
+  Level* level = &other_side->at(best_price);
 
   while (unfilled_qty > Quantity{0}) {
     if (!other_side->contains(best_price)) {
@@ -214,7 +215,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
       .order_id = order.id,
       .status = OrderStatus::kAwaitingFill,
       .immediate_trades = std::vector<Trade>{},
-      .remaining_qty = Quantity{0},
+      .remaining_qty = Quantity{order.qty},
   };
 }
 
