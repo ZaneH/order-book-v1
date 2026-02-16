@@ -189,13 +189,17 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
     cross_match = Match(side, best_value.value(), order, false);
   }
 
+  bool discard_remainder = tif == TimeInForce::kImmediateOrCancel;
   if (cross_match.unfilled.has_value()) {
-    AddOrderToBook(side, book_side, price, cross_match.unfilled.value());
+    if (!discard_remainder) {
+      AddOrderToBook(side, book_side, price, cross_match.unfilled.value());
+    }
     return AddResultPayload{
         .order_id = order.id,
         .status = OrderStatus::kPartialFill,
         .immediate_trades = cross_match.trades,
-        .remaining_qty = cross_match.unfilled->qty,
+        .remaining_qty =
+            discard_remainder ? Quantity{0} : cross_match.unfilled->qty,
     };
   } else if (cross_match.filled_all) {
     return AddResultPayload{
@@ -206,7 +210,9 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
     };
   }
 
-  AddOrderToBook(side, book_side, price, order);
+  if (!discard_remainder) {
+    AddOrderToBook(side, book_side, price, order);
+  }
 
 #ifndef NDEBUG
   Verify();
@@ -216,7 +222,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
       .order_id = order.id,
       .status = OrderStatus::kAwaitingFill,
       .immediate_trades = std::vector<Trade>{},
-      .remaining_qty = Quantity{order.qty},
+      .remaining_qty = discard_remainder ? Quantity{0} : Quantity{order.qty},
   };
 }
 

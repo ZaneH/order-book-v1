@@ -134,4 +134,19 @@ TEST_F(OrderBookTest, AddMarketSingleBuyMultipleLevels) {
   EXPECT_EQ(ob_.DepthAt(OrderSide::kBuy, Price{10}), Quantity{0});
   EXPECT_EQ(ob_.DepthAt(OrderSide::kBuy, Price{8}), Quantity{0});
 }
+
+TEST_F(OrderBookTest, AddLimitCrossingSellImmediateOrCancelDiscardsRemainder) {
+  // Arrange
+  ArrangeBidLevels({{Price{5}, Quantity{5}}, {Price{8}, Quantity{5}}});
+
+  // Act
+  auto result = AddLimitOk(UserId{0}, OrderSide::kSell, Price{6}, Quantity{10},
+                           TimeInForce::kImmediateOrCancel);
+
+  // Assert
+  AssertAddResult(result, OrderStatus::kPartialFill, Quantity{0}, 1);
+  EXPECT_EQ(ob_.DepthAt(OrderSide::kSell, Price{6}), Quantity{0});
+  EXPECT_EQ(ob_.DepthAt(OrderSide::kBuy, Price{8}), Quantity{0});
+  EXPECT_EQ(ob_.DepthAt(OrderSide::kBuy, Price{5}), Quantity{5});
+}
 }  // namespace order_book_v1

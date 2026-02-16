@@ -177,10 +177,10 @@ Market and IOC are similar mechanically: consume liquidity, maybe leave nothing.
   - match against opposite side starting at best
   - never insert into id_index
   - return trades + leftover qty (if book empties)
-- [ ] Implement IOC for add_limit:
+- [X] Implement IOC for add_limit:
   - same matching loop as GTC
   - if remainder > 0: discard it (do not rest it)
-- [ ] Add tests:
+- [X] Add tests:
   - market walks multiple levels
   - IOC partially fills then cancels remainder
   - market on empty book returns status "no liquidity" (no state change)

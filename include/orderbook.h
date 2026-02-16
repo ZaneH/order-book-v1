@@ -30,7 +30,7 @@ struct Handle {
 enum class RejectReason {
   kBadPrice = 0,
   kBadQty,
-  kOverflow,
+  kOverflow,  // NOTE: Currently unused
   kEmptyBookForMarket,
 };
 
