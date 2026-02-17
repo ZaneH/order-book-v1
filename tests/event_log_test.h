@@ -13,8 +13,8 @@
 namespace order_book_v1 {
 class EventLogTest : public testing::Test {
  protected:
-  EventLog log_;
   std::ostringstream buf_;
+  EventLog log_{&buf_};
 
   void ArrangeEvents(const std::initializer_list<OrderBookEvent>& events);
   void AssertOutput(std::string_view expected);

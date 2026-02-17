@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <expected/expected.hpp>
+#include <iostream>
 #include <list>
 #include <map>
 #include <optional>
@@ -10,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "event_log.h"
 #include "order.h"
 #include "trade.h"
 #include "types.h"
@@ -116,6 +118,11 @@ class OrderBook {
               std::vector<Trade>& trades);
   void AddOrderToBook(OrderSide side, BookSide* book_side, Price value,
                       const Order& order);
+  void EmitLimitOrderEvent(const Order& order);
+  void EmitMarketOrderEvent(const Order& order);
+  void EmitCancelEvent(const OrderId& order);
+
+  EventLog log_{&std::cout};
 
 #ifndef NDEBUG
   // Only provided in debug builds. Used to verify invariants.

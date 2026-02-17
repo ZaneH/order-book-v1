@@ -9,6 +9,28 @@
 #include <utility>
 
 namespace order_book_v1 {
+void OrderBook::EmitLimitOrderEvent(const Order& order) {
+  log_.AppendEvent(AddLimitOrderEvent{
+      .creator_id = order.creator_id,
+      .side = order.side,
+      .qty = order.qty,
+      .price = order.price,
+      .tif = order.tif,
+  });
+}
+
+void OrderBook::EmitMarketOrderEvent(const Order& order) {
+  log_.AppendEvent(AddMarketOrderEvent{
+      .creator_id = order.creator_id,
+      .side = order.side,
+      .qty = order.qty,
+  });
+}
+
+void OrderBook::EmitCancelEvent(const OrderId& id) {
+  log_.AppendEvent(CancelOrderEvent{.order_id = id});
+}
+
 Quantity OrderBook::DepthAt(OrderSide side, Price price) const {
   auto& book_side = side == OrderSide::kBuy ? bids_ : asks_;
   auto it = book_side.find(price);
@@ -136,6 +158,7 @@ AddResult OrderBook::AddMarket(UserId user_id, OrderSide side, Quantity qty) {
   }
 
   if (cross_match.unfilled.has_value()) {
+    EmitMarketOrderEvent(order);
     return AddResultPayload{
         .order_id = order.id,
         .status = OrderStatus::kPartialFill,
@@ -143,6 +166,7 @@ AddResult OrderBook::AddMarket(UserId user_id, OrderSide side, Quantity qty) {
         .remaining_qty = cross_match.unfilled->qty,
     };
   } else if (cross_match.filled_all) {
+    EmitMarketOrderEvent(order);
     return AddResultPayload{
         .order_id = order.id,
         .status = OrderStatus::kImmediateFill,
@@ -177,7 +201,6 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
   };
 
   auto* book_side = (side == OrderSide::kBuy) ? &bids_ : &asks_;
-
   auto best_value = (side == OrderSide::kBuy) ? BestAsk() : BestBid();
 
   MatchResult cross_match{};
@@ -194,6 +217,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
     if (!discard_remainder) {
       AddOrderToBook(side, book_side, price, cross_match.unfilled.value());
     }
+    EmitLimitOrderEvent(order);
     return AddResultPayload{
         .order_id = order.id,
         .status = OrderStatus::kPartialFill,
@@ -202,6 +226,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
             discard_remainder ? Quantity{0} : cross_match.unfilled->qty,
     };
   } else if (cross_match.filled_all) {
+    EmitLimitOrderEvent(order);
     return AddResultPayload{
         .order_id = order.id,
         .status = OrderStatus::kImmediateFill,
@@ -218,6 +243,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
   Verify();
 #endif
 
+  EmitLimitOrderEvent(order);
   return AddResultPayload{
       .order_id = order.id,
       .status = OrderStatus::kAwaitingFill,
@@ -246,6 +272,8 @@ bool OrderBook::Cancel(OrderId id) {
 #ifndef NDEBUG
   Verify();
 #endif
+
+  EmitCancelEvent(id);
   return true;
 }
 

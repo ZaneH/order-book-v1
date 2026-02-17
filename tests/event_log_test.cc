@@ -10,7 +10,7 @@ namespace order_book_v1 {
 void EventLogTest::ArrangeEvents(
     const std::initializer_list<OrderBookEvent>& events) {
   for (const auto& e : events) {
-    log_.AppendEvent(e, buf_);
+    log_.AppendEvent(e);
   }
 }
 
