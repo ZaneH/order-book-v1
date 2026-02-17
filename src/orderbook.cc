@@ -9,6 +9,8 @@
 #include <utility>
 
 namespace order_book_v1 {
+OrderBook::OrderBook(std::ostream* log_dest) : log_(EventLog{log_dest}) {}
+
 void OrderBook::EmitLimitOrderEvent(const Order& order) {
   log_.AppendEvent(AddLimitOrderEvent{
       .creator_id = order.creator_id,

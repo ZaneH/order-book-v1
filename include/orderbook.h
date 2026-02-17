@@ -54,6 +54,8 @@ struct MatchResult {
 
 class OrderBook {
  public:
+  OrderBook(std::ostream* log_dest = &std::cout);
+
   // Postconditions: FIFO preserved, empty levels removed, no crossed book
   AddResult AddLimit(UserId user_id, OrderSide side, Price price, Quantity qty,
                      TimeInForce tif);
@@ -122,7 +124,7 @@ class OrderBook {
   void EmitMarketOrderEvent(const Order& order);
   void EmitCancelEvent(const OrderId& order);
 
-  EventLog log_{&std::cout};
+  EventLog log_;
 
 #ifndef NDEBUG
   // Only provided in debug builds. Used to verify invariants.
