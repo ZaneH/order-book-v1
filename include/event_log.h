@@ -3,15 +3,12 @@
 
 #include <cstdint>
 #include <optional>
+#include <ostream>
 #include <variant>
 
 #include "types.h"
 
 namespace order_book_v1 {
-enum class EventLogDestination {
-  kStdout = 0,
-};
-
 struct AddLimitOrderEvent {
   UserId creator_id;
   OrderSide side;
@@ -43,11 +40,12 @@ struct LoggedEvent {
 
 class EventLog {
  public:
-  void AppendEvent(const OrderBookEvent& event, std::ostream& os);
+  EventLog(std::ostream* dest);
+  void AppendEvent(const OrderBookEvent& event);
   uint32_t event_seq();
 
  private:
-  EventLogDestination dest_;  // TODO: Make use of dest_
+  std::ostream* dest_;
   uint32_t event_seq_ = 0;
 };
 }  // namespace order_book_v1

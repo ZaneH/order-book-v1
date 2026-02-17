@@ -199,10 +199,10 @@ Decide early: binary or text.
 Start with text. You can always add binary later.
 
 ** tasks
-- [ ] Define an event schema:
+- [X] Define an event schema:
   - event_type: add_limit / add_market / cancel
   - fields: user_id, side, price, qty, tif, order_id (for cancel), event_seq
-- [ ] The engine writes events to a log as it processes them:
+- [X] The engine writes events to a log as it processes them:
   - append-only
   - flush policy: per event or buffered (start simple: per event)
 - [ ] Implement a replayer tool:
