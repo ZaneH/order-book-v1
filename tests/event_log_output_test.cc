@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "event_log_test.h"
 
 namespace order_book_v1 {
@@ -26,5 +28,21 @@ TEST_F(EventLogTest, StringifyEvents) {
       "2 ADDMARKET 7 BUY 5\n"};
   AssertOutput(expected);
   AssertEventSeq(3);
+}
+
+TEST_F(EventLogTest, InvalidLimitOrderEvent) {
+  // Arrange
+  ArrangeEvents({AddLimitOrderEvent{
+      UserId{0},
+      OrderSide::kBuy,
+      Quantity{2},
+      std::nullopt,
+      std::nullopt,
+  }});
+
+  // Assert
+  std::string expected{"0 INVALID LIMIT ORDER\n"};
+  AssertOutput(expected);
+  AssertEventSeq(1);
 }
 }  // namespace order_book_v1
