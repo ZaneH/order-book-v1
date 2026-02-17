@@ -4,13 +4,17 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <ostream>
 
 namespace order_book_v1 {
 enum class OrderSide { kBuy = 0, kSell };
+std::ostream& operator<<(std::ostream& os, OrderSide const side);
+
 enum class TimeInForce {
   kGoodTillCancel = 0,
   kImmediateOrCancel,
 };
+std::ostream& operator<<(std::ostream& os, TimeInForce const tif);
 
 using Underlying = uint32_t;
 
@@ -18,6 +22,10 @@ template <class Tag>
 struct StrongId {
   Underlying v{};
   friend constexpr bool operator==(StrongId, StrongId) = default;
+  friend std::ostream& operator<<(std::ostream& os, const StrongId& id) {
+    os << id.v;
+    return os;
+  };
 };
 
 template <class Tag>
@@ -55,6 +63,11 @@ struct StrongNum {
 
   friend constexpr bool operator==(StrongNum, StrongNum) = default;
   friend constexpr auto operator<=>(StrongNum, StrongNum) = default;
+
+  friend std::ostream& operator<<(std::ostream& os, const StrongNum& n) {
+    os << n.v;
+    return os;
+  }
 };
 
 struct TicksTag {};

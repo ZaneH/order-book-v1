@@ -19,6 +19,8 @@ add_executable(clob_cli
 add_library(orderbook
   SHARED
   src/orderbook.cc
+  src/event_log.cc
+  src/types.cc
 )
 
 include(FetchContent)
@@ -38,6 +40,7 @@ add_executable(orderbook_test
   tests/orderbook_layout_test.cc
   tests/orderbook_match_test.cc
   tests/orderbook_reject_test.cc
+  tests/event_log_test.cc
 )
 
 target_link_libraries(orderbook_test
