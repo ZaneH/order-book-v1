@@ -2,19 +2,23 @@
 
 #include <gtest/gtest.h>
 
+#include <sstream>
+
+#include "event_log_test.h"
+
 namespace order_book_v1 {
-TEST(EventLog, ProofOfConcept) {
-  EventLog log;
+void EventLogTest::ArrangeEvents(
+    const std::initializer_list<OrderBookEvent>& events) {
+  for (const auto& e : events) {
+    log_.AppendEvent(e, buf_);
+  }
+}
 
-  AddLimitOrderEvent e1 = {BaseEvent{.event_seq = 0},
-                           UserId{0},
-                           OrderSide::kBuy,
-                           Quantity{2},
-                           Price{10},
-                           TimeInForce::kGoodTillCancel};
-  CancelOrderEvent e2 = {BaseEvent{.event_seq = 1}, OrderId{0}};
+void EventLogTest::AssertOutput(std::string_view expected) {
+  EXPECT_EQ(buf_.str(), expected);
+}
 
-  log.AppendEvent(e1, std::cout);
-  log.AppendEvent(e2, std::cout);
+void EventLogTest::AssertEventSeq(uint32_t expected) {
+  EXPECT_EQ(log_.event_seq(), expected);
 }
 }  // namespace order_book_v1

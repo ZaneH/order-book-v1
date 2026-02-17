@@ -41,6 +41,7 @@ add_executable(orderbook_test
   tests/orderbook_match_test.cc
   tests/orderbook_reject_test.cc
   tests/event_log_test.cc
+  tests/event_log_output_test.cc
 )
 
 target_link_libraries(orderbook_test
