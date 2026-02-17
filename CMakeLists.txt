@@ -85,6 +85,6 @@ target_link_options(project_defaults
   $<$<CONFIG:Debug>:${SAN_FLAGS}>
 )
 
-target_link_libraries(clob_cli PRIVATE project_defaults tl_expected)
+target_link_libraries(clob_cli PRIVATE project_defaults tl_expected orderbook)
 target_link_libraries(orderbook PRIVATE project_defaults tl_expected)
 target_link_libraries(orderbook_test PRIVATE project_defaults tl_expected orderbook)
