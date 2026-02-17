@@ -1,6 +1,7 @@
 #ifndef INCLUDE_EVENT_LOG_H_
 #define INCLUDE_EVENT_LOG_H_
 
+#include <cstdint>
 #include <optional>
 #include <variant>
 
@@ -11,11 +12,7 @@ enum class EventLogDestination {
   kStdout = 0,
 };
 
-struct BaseEvent {
-  uint32_t event_seq;
-};
-
-struct AddLimitOrderEvent : BaseEvent {
+struct AddLimitOrderEvent {
   UserId creator_id;
   OrderSide side;
 
@@ -25,26 +22,33 @@ struct AddLimitOrderEvent : BaseEvent {
   std::optional<TimeInForce> tif;
 };
 
-struct AddMarketOrderEvent : BaseEvent {
+struct AddMarketOrderEvent {
   UserId creator_id;
   OrderSide side;
 
   Quantity qty;
 };
 
-struct CancelOrderEvent : BaseEvent {
+struct CancelOrderEvent {
   OrderId order_id;
 };
 
 using OrderBookEvent =
     std::variant<AddLimitOrderEvent, AddMarketOrderEvent, CancelOrderEvent>;
 
+struct LoggedEvent {
+  uint32_t event_seq;
+  OrderBookEvent event;
+};
+
 class EventLog {
  public:
   void AppendEvent(const OrderBookEvent& event, std::ostream& os);
+  uint32_t event_seq();
 
  private:
   EventLogDestination dest_;  // TODO: Make use of dest_
+  uint32_t event_seq_ = 0;
 };
 }  // namespace order_book_v1
 
