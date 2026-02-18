@@ -17,7 +17,7 @@ You will end up with:
 - a replay log format + replayer
 - a test suite that proves determinism
 
-This document was created with generative AI; it is based on [[https://github.com/alissawu/miniex][alissawu/miniex]].
+This document was created with generative AI; it was inspired by [[https://github.com/alissawu/miniex][alissawu/miniex]].
 
 * part 0: bootstrap and habits
 ** tasks
@@ -205,7 +205,7 @@ Start with text. You can always add binary later.
 - [X] The engine writes events to a log as it processes them:
   - append-only
   - flush policy: per event or buffered (start simple: per event)
-- [ ] Implement a replayer tool:
+- [X] Implement a replayer tool:
   - reads the log
   - feeds events back into a fresh OrderBook
   - prints final top-of-book and a state hash

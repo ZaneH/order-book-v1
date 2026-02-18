@@ -1,5 +1,5 @@
 * Order Book V1
-See [[./docs/00_COURSEWORK.org][00_COURSEWORK.org]] for the project specs. Based on [[https://github.com/alissawu/miniex][alissawu/miniex]].
+See [[./docs/00_COURSEWORK.org][00_COURSEWORK.org]] for the project specs. Inspired by [[https://github.com/alissawu/miniex][alissawu/miniex]].
 
 This project uses the [[https://google.github.io/styleguide/cppguide.html][Google C++ Style Guide]].
 
@@ -10,5 +10,5 @@ This project uses the [[https://google.github.io/styleguide/cppguide.html][Googl
   $ cmake --build build
   $ cd build
   $ ctest # Run tests (add --verbose for more detail)
-  $ ./clob_cli # Start orderbook
+  $ ./clob_cli # Simulation/Replay tool
 #+end_src

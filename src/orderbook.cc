@@ -149,6 +149,7 @@ AddResult OrderBook::AddMarket(UserId user_id, OrderSide side, Quantity qty) {
                             .tif = std::nullopt};
   auto best_value = (side == OrderSide::kBuy) ? BestAsk() : BestBid();
   if (!best_value.has_value()) {
+    EmitMarketOrderEvent(order);
     return tl::unexpected<RejectReason>(RejectReason::kEmptyBookForMarket);
   }
 
@@ -181,6 +182,7 @@ AddResult OrderBook::AddMarket(UserId user_id, OrderSide side, Quantity qty) {
   Verify();
 #endif
 
+  EmitMarketOrderEvent(order);
   return tl::unexpected<RejectReason>(RejectReason::kEmptyBookForMarket);
 }
 
@@ -255,6 +257,7 @@ AddResult OrderBook::AddLimit(UserId user_id, OrderSide side, Price price,
 }
 
 bool OrderBook::Cancel(OrderId id) {
+  EmitCancelEvent(id);
   auto handle_it = order_id_index_.find(id);
   if (handle_it == order_id_index_.end()) {
     return false;
@@ -275,7 +278,6 @@ bool OrderBook::Cancel(OrderId id) {
   Verify();
 #endif
 
-  EmitCancelEvent(id);
   return true;
 }
 

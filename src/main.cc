@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <random>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -114,7 +115,6 @@ void StartSimulation(const SimulationConfig& config) {
   }
 
   std::vector<order_book_v1::OrderId> past_ids;
-  uint32_t runs = 0;
   while (true) {
     order_book_v1::OrderSide side = side_rn(rng) == 0
                                         ? order_book_v1::OrderSide::kBuy
@@ -133,7 +133,9 @@ void StartSimulation(const SimulationConfig& config) {
       auto result = ob.AddLimit(order_book_v1::UserId{user}, side,
                                 order_book_v1::Price{price},
                                 order_book_v1::Quantity{qty}, tif);
-      past_ids.push_back(result->order_id);
+      if (result.has_value()) {
+        past_ids.push_back(result->order_id);
+      }
     } else if (action <= 80) {
       // 30% are Market orders
       uint32_t qty = qty_rn(rng);
@@ -150,16 +152,76 @@ void StartSimulation(const SimulationConfig& config) {
       }
     }
 
-    if (++runs % 10 == 0) {
-      std::cout << ob;
-    }
+    std::cout << ob << "\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(sleep_rn(rng)));
   }
 }
 
-void StartReplay(std::string_view& input_path) {
-  (void)input_path;  // TODO: Remove
-  std::cout << "Not implemented" << std::endl;
+int StartReplay(std::string_view& input_path) {
+  std::ifstream log_file(input_path.begin());
+  if (!log_file.is_open()) {
+    std::cerr << "Specified input file doesn't exist" << std::endl;
+    return 3;
+  }
+
+  order_book_v1::OrderBook ob{};
+
+  std::string line;
+  while (std::getline(log_file, line)) {
+    std::vector<std::string> parts;
+    std::istringstream str(line);
+    std::string part;
+
+    order_book_v1::EventType type;
+
+    while (str >> part) {
+      parts.push_back(part);
+
+      if (parts.size() == 2) {
+        std::string type_part = parts.rbegin()->c_str();
+        if (type_part == "ADDLIMIT") {
+          type = order_book_v1::EventType::kLimit;
+        } else if (type_part == "ADDMARKET") {
+          type = order_book_v1::EventType::kMarket;
+        } else if (type_part == "CANCEL") {
+          type = order_book_v1::EventType::kCancel;
+        }
+      }
+    }
+
+    // Type is known, all parts have been read
+    if (type == order_book_v1::EventType::kLimit) {
+      uint32_t user_id = std::stoi(parts[2]);
+      order_book_v1::OrderSide side = (parts[3] == "BUY")
+                                          ? order_book_v1::OrderSide::kBuy
+                                          : order_book_v1::OrderSide::kSell;
+      uint32_t qty = std::stoi(parts[4]);
+      uint32_t price = std::stoi(parts[5]);
+      order_book_v1::TimeInForce tif =
+          (parts[6] == "GTC") ? order_book_v1::TimeInForce::kGoodTillCancel
+                              : order_book_v1::TimeInForce::kImmediateOrCancel;
+      auto result = ob.AddLimit(order_book_v1::UserId{user_id}, side,
+                                order_book_v1::Price{price},
+                                order_book_v1::Quantity{qty}, tif);
+    } else if (type == order_book_v1::EventType::kMarket) {
+      uint32_t user_id = std::stoi(parts[2]);
+      order_book_v1::OrderSide side = (parts[3] == "BUY")
+                                          ? order_book_v1::OrderSide::kBuy
+                                          : order_book_v1::OrderSide::kSell;
+      uint32_t qty = std::stoi(parts[4]);
+      auto result = ob.AddMarket(order_book_v1::UserId{user_id}, side,
+                                 order_book_v1::Quantity{qty});
+    } else if (type == order_book_v1::EventType::kCancel) {
+      uint32_t order_id = std::stoi(parts[2]);
+      ob.Cancel(order_book_v1::OrderId{order_id});
+    }
+  }
+
+  std::cout << "Final State:\n";
+  std::cout << "====================\n";
+  std::cout << ob;
+  std::cout << "====================\n";
+  return 0;
 }
 }  // namespace
 
@@ -274,6 +336,12 @@ int main(int argc, char** argv) {
   if (min_sim_sleep > max_sim_sleep) {
     std::cerr << "--min-sim-sleep cannot be greater than --max-sim-sleep\n";
     return 2;
+  } else if (min_price > max_price) {
+    std::cerr << "--min-price cannot be greater than --max-price\n";
+    return 2;
+  } else if (min_quantity > max_quantity) {
+    std::cerr << "--min-quantity cannot be greater than --max-quantity\n";
+    return 2;
   }
 
   if (mode == CLIMode::kSimulate) {
@@ -288,7 +356,7 @@ int main(int argc, char** argv) {
         .simulation_seed = simulation_seed,
     });
   } else if (mode == CLIMode::kReplay) {
-    StartReplay(input_path);
+    return StartReplay(input_path);
   }
 
   return 0;

@@ -7,6 +7,7 @@
 #include <ostream>
 
 namespace order_book_v1 {
+enum class EventType { kLimit = 0, kMarket, kCancel };
 enum class OrderSide { kBuy = 0, kSell };
 std::ostream& operator<<(std::ostream& os, OrderSide const side);
 
