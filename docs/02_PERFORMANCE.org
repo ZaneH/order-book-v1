@@ -1,0 +1,43 @@
+* Performance
+** First Pass
+   During the first pass of development, I had to make certain assumptions about performance without having benchmarks to justify these decisions. Here are the decisions I made during my first pass and the reasons for them.
+
+*** Prefix or Postfix ++
+    Using =++i= as opposed to =i++= is a well known optimization. It avoids 1 temporary copy and during my first pass, I used both.
+
+*** Copy or Reference in Function Arguments
+    #+begin_src C++
+    void OrderBook::EmitCancelEvent(OrderId id) {
+      log_.AppendEvent(CancelOrderEvent{.order_id = id});
+    }
+    #+end_src
+
+    In instances like this, it is not obvious whether copying the =OrderId= struct or passing a constant reference to it is more performant. A general rule of thumb is primitives (e.g. int, bool) and structures <=16 bytes should be copied and large structs or strings should use references or constant references.
+
+*** Random Numbers
+    There are two popular ways of generating random numbers in C++: =rand()= and =std::mt19937=. =std::mt19937= is known to produce higher quality random numbers. I chose to use =rand()= because it is faster, requires less code, and the random numbers used in my program are purely used for dummy data and doesn't /need/ to be high-quality.
+
+*** Recursion
+    In my first pass of the =Match(...)= function, I used recursion to handle the case of crossing over multiple levels. I immediately knew the implementation would need to be changed to be non-recursive because:
+
+    1. In my opinion, recursive functions are harder to read than loops.
+    2. It has been instilled in me that recursion grows the stack frame on each call. While most orders that cross levels won't cross more than a few, this isn't guaranteed.
+
+    While building this program, I learned that C++ compilers can perform "Tail Call Optimization" or TCO for short. In short: TCO can make recursive functions act more like looping ones, but only if the conditions are right. Instead of relying on TCO, refactoring any recursive functions into loops seems like the wiser choice, even if just to improve readability.
+
+    Commit: https://github.com/ZaneH/order-book-v1/commit/d70141b416bae3df91e3b7f7e009ebe862b8c5fa
+
+*** unordered_map
+    During the first pass, I accepted the potential performance cost of using the STL's =unordered_map=. I have been made aware that Boost's equivalent may perform better and I intend to test and document the results during my second pass.
+
+*** EventLog
+**** Buffered EventLog
+     The =EventLog= class is an append-only log that writes to =stdout= by default, or, if provided, outputs to a file. During my first pass, I chose not to buffer the output, but instead to flush per-event. I'm pretty certain this decision will have a considerable performance cost and I intend to benchmark and document my findings during my second pass.
+
+     I chose not to buffer the output at first for simplicity sake.
+
+**** Binary EventLog
+     Again, for simplicity, I chose to use text to represent each event when writing the =EventLog=. This made development easier, but will likely incur a higher performance cost when encoding/decoding the events compared to a binary representation. I would like to come back and benchmark the two implementations. This one is a lower priority for me.
+
+*** Heap Allocations in Hot Path
+    During my first pass, I was more focused on correctness than avoiding heap allocations.
