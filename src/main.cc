@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -65,6 +66,10 @@ Options:
   --input <path>			Read events from file path for replay
   --min-sim-sleep <milliseconds>	Minimum delay between simulated events (default: 10)
   --max-sim-sleep <milliseconds>	Maximum delay between simulated events (default: 1250)
+  --min-price <number>			Minimum price for simulated limit orders (default: 1)
+  --max-price <number>			Maximum price for simulated limit orders (default: 100)
+  --min-quantity <number>		Minimum quantity for simulated orders (default: 1)
+  --max-quantity <number>		Maximum quantity for simulated orders (default: 50)
   --seed <number>			Use a specified seed when creating simulated events
   --help				Display this message and exit
 )";
@@ -76,52 +81,79 @@ struct SimulationConfig {
   std::string_view output_path;
   uint32_t min_sim_sleep;
   uint32_t max_sim_sleep;
+  uint32_t min_price;
+  uint32_t max_price;
+  uint32_t min_quantity;
+  uint32_t max_quantity;
   uint32_t simulation_seed;
 };
 
 void StartSimulation(const SimulationConfig& config) {
-  srand(config.simulation_seed);
+  std::random_device dev;
+  std::mt19937 rng(config.simulation_seed);
+  std::uniform_int_distribution<std::mt19937::result_type> sleep_rn(
+      config.min_sim_sleep, config.max_sim_sleep);
+  std::uniform_int_distribution<std::mt19937::result_type> user_rn(0, 1000);
+  std::uniform_int_distribution<std::mt19937::result_type> action_rn(0, 99);
+  std::uniform_int_distribution<std::mt19937::result_type> side_rn(0, 1);
+  std::uniform_int_distribution<std::mt19937::result_type> tif_rn(0, 10);
+  std::uniform_int_distribution<std::mt19937::result_type> cancel_idx_rn;
 
-  std::ofstream log_dest(config.output_path.begin(), std::ios::binary);
-  order_book_v1::OrderBook ob(&log_dest);
+  std::uniform_int_distribution<std::mt19937::result_type> qty_rn(
+      config.min_quantity, config.max_quantity);
+  std::uniform_int_distribution<std::mt19937::result_type> price_rn(
+      config.min_price, config.max_price);
 
-  std::vector<order_book_v1::OrderId> potential_order_ids;
+  order_book_v1::OrderBook ob;
+  std::ofstream log_file;
+  if (config.output_path.empty()) {
+    ob = order_book_v1::OrderBook(&std::cout);
+  } else {
+    log_file = std::ofstream(config.output_path.begin(), std::ios::binary);
+    ob = order_book_v1::OrderBook(&log_file);
+  }
+
+  std::vector<order_book_v1::OrderId> past_ids;
   uint32_t runs = 0;
   while (true) {
-    uint32_t sleep_ms =
-        rand() % (config.max_sim_sleep + 1 - config.min_sim_sleep) +
-        config.min_sim_sleep;
-    uint16_t user_rn = rand() % 1000;
-    uint8_t action_rn = rand() % 3;
-    uint8_t side_rn = rand() % 2;
-    order_book_v1::OrderSide side = side_rn == 0
+    order_book_v1::OrderSide side = side_rn(rng) == 0
                                         ? order_book_v1::OrderSide::kBuy
                                         : order_book_v1::OrderSide::kSell;
-    uint8_t qty_rn = rand() % 50 + 1;     // [1, 50]
-    uint8_t price_rn = rand() % 100 + 1;  // [1, 100]
+    uint8_t action = action_rn(rng);
+    uint32_t user = user_rn(rng);
+    if (action <= 50) {
+      // 50% are Limit orders
+      uint32_t qty = qty_rn(rng);
+      uint32_t price = price_rn(rng);
+      order_book_v1::TimeInForce tif =
+          // 80% are GTC / 20% are IOC
+          tif_rn(rng) < 8 ? order_book_v1::TimeInForce::kGoodTillCancel
+                          : order_book_v1::TimeInForce::kImmediateOrCancel;
 
-    if (action_rn == 0) {
-      auto result = ob.AddLimit(order_book_v1::UserId{user_rn}, side,
-                                order_book_v1::Price{price_rn},
-                                order_book_v1::Quantity{qty_rn},
-                                order_book_v1::TimeInForce::kGoodTillCancel);
-      potential_order_ids.push_back(result->order_id);
-    } else if (action_rn == 1) {
-      auto result = ob.AddMarket(order_book_v1::UserId{user_rn}, side,
-                                 order_book_v1::Quantity{qty_rn});
-    } else if (action_rn == 2) {
-      if (potential_order_ids.size() > 0) {
-        auto rand_idx = rand() % potential_order_ids.size();
-        ob.Cancel(potential_order_ids.at(rand_idx));
-        potential_order_ids.erase(potential_order_ids.begin() + rand_idx);
+      auto result = ob.AddLimit(order_book_v1::UserId{user}, side,
+                                order_book_v1::Price{price},
+                                order_book_v1::Quantity{qty}, tif);
+      past_ids.push_back(result->order_id);
+    } else if (action <= 80) {
+      // 30% are Market orders
+      uint32_t qty = qty_rn(rng);
+      auto result = ob.AddMarket(order_book_v1::UserId{user}, side,
+                                 order_book_v1::Quantity{qty});
+    } else if (action <= 99) {
+      // 20% are Cancel requests
+      if (!past_ids.empty()) {
+        const size_t last = past_ids.size() - 1;
+        const size_t idx =
+            cancel_idx_rn(rng, decltype(cancel_idx_rn)::param_type{0, last});
+        ob.Cancel(past_ids[idx]);
+        past_ids.clear();
       }
     }
 
     if (++runs % 10 == 0) {
-      std::cout << ob << std::endl;
+      std::cout << ob;
     }
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_rn(rng)));
   }
 }
 
@@ -142,6 +174,10 @@ int main(int argc, char** argv) {
   std::string_view input_path;
   uint32_t min_sim_sleep = 10;
   uint32_t max_sim_sleep = 1250;
+  uint32_t min_price = 1;
+  uint32_t max_price = 100;
+  uint32_t min_quantity = 1;
+  uint32_t max_quantity = 50;
   uint32_t simulation_seed = time(0);
 
   const std::string first = ToLowerAscii(argv[1]);
@@ -191,6 +227,34 @@ int main(int argc, char** argv) {
       if (!ParseUint32(argv[++i], arg, max_sim_sleep)) {
         return 2;
       }
+    } else if (arg == "--min-price") {
+      if (!RequireValue(i, argc, arg)) {
+        return 2;
+      }
+      if (!ParseUint32(argv[++i], arg, min_price)) {
+        return 2;
+      }
+    } else if (arg == "--max-price") {
+      if (!RequireValue(i, argc, arg)) {
+        return 2;
+      }
+      if (!ParseUint32(argv[++i], arg, max_price)) {
+        return 2;
+      }
+    } else if (arg == "--min-quantity") {
+      if (!RequireValue(i, argc, arg)) {
+        return 2;
+      }
+      if (!ParseUint32(argv[++i], arg, min_quantity)) {
+        return 2;
+      }
+    } else if (arg == "--max-quantity") {
+      if (!RequireValue(i, argc, arg)) {
+        return 2;
+      }
+      if (!ParseUint32(argv[++i], arg, max_quantity)) {
+        return 2;
+      }
     } else if (arg == "--seed") {
       if (!RequireValue(i, argc, arg)) {
         return 2;
@@ -217,6 +281,10 @@ int main(int argc, char** argv) {
         .output_path = output_path,
         .min_sim_sleep = min_sim_sleep,
         .max_sim_sleep = max_sim_sleep,
+        .min_price = min_price,
+        .max_price = max_price,
+        .min_quantity = min_quantity,
+        .max_quantity = max_quantity,
         .simulation_seed = simulation_seed,
     });
   } else if (mode == CLIMode::kReplay) {

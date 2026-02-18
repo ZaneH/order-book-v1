@@ -14,9 +14,6 @@
 
     In instances like this, it is not obvious whether copying the =OrderId= struct or passing a constant reference to it is more performant. A general rule of thumb is primitives (e.g. int, bool) and structures <=16 bytes should be copied and large structs or strings should use references or constant references.
 
-*** Random Numbers
-    There are two popular ways of generating random numbers in C++: =rand()= and =std::mt19937=. =std::mt19937= is known to produce higher quality random numbers. I chose to use =rand()= because it is faster, requires less code, and the random numbers used in my program are purely used for dummy data and doesn't /need/ to be high-quality.
-
 *** Recursion
     In my first pass of the =Match(...)= function, I used recursion to handle the case of crossing over multiple levels. I immediately knew the implementation would need to be changed to be non-recursive because:
 

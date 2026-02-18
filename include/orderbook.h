@@ -74,27 +74,29 @@ class OrderBook {
   Quantity DepthAt(OrderSide side, Price price) const;
 
   friend std::ostream& operator<<(std::ostream& os, const OrderBook& book) {
-    os << "Book: ";
+    os << "Book:";
     if (book.bids_.empty() && book.asks_.empty()) {
-      os << "(empty)";
+      os << "\t(empty)\n";
       return os;
     }
 
     if (!book.bids_.empty()) {
       os << "\n[bids]\n";
       for (const auto& [price, level] : book.bids_) {
-        os << price.v << ": ";
+        os << price.v << ":\t";
         for (const auto& order : level.orders) {
           os << "B" << order.id.v << "(" << order.qty.v << "), ";
         }
         os << "\n";
       }
+    } else {
+      os << "\n";
     }
 
     if (!book.asks_.empty()) {
       os << "[asks]\n";
       for (const auto& [price, level] : book.asks_) {
-        os << price.v << ": ";
+        os << price.v << ":\t";
         for (const auto& order : level.orders) {
           os << "A" << order.id.v << "(" << order.qty.v << "), ";
         }
@@ -122,7 +124,7 @@ class OrderBook {
                       const Order& order);
   void EmitLimitOrderEvent(const Order& order);
   void EmitMarketOrderEvent(const Order& order);
-  void EmitCancelEvent(const OrderId& order);
+  void EmitCancelEvent(OrderId order);
 
   EventLog log_;
 

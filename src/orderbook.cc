@@ -29,7 +29,7 @@ void OrderBook::EmitMarketOrderEvent(const Order& order) {
   });
 }
 
-void OrderBook::EmitCancelEvent(const OrderId& id) {
+void OrderBook::EmitCancelEvent(OrderId id) {
   log_.AppendEvent(CancelOrderEvent{.order_id = id});
 }
 
