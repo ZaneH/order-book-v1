@@ -20,9 +20,9 @@
 
   #+begin_src
   Book: (empty)
-  
+
   Action: A1, sell 2 @ 101
-  
+
   Book:
   [asks]
   101: (A1)2
@@ -45,70 +45,70 @@
 
 ** one FIFO within a level
 
-#+begin_src
-Book:
-[asks]
-105: A1(2)
-[bids]
-103: B1(6)
+  #+begin_src
+  Book:
+  [asks]
+  105: A1(2)
+  [bids]
+  103: B1(6)
 
-Action: B2, buy 10 @ 103
+  Action: B2, buy 10 @ 103
 
-Book:
-[asks]
-105: A1(2)
-[bids]
-103: B1(6), B2(10)
+  Book:
+  [asks]
+  105: A1(2)
+  [bids]
+  103: B1(6), B2(10)
 
-Action: B3, buy 1 @ 103
+  Action: B3, buy 1 @ 103
 
-Book:
-[asks]
-105: A1(2)
-[bids]
-103: B1(6), B2(10), B3(1)
+  Book:
+  [asks]
+  105: A1(2)
+  [bids]
+  103: B1(6), B2(10), B3(1)
 
-Action: A2, sell 5 @ 103 (crosses)
+  Action: A2, sell 5 @ 103 (crosses)
 
-Matching:
-- B1 takes A2 @ 103, 5/6 filled
+  Matching:
+  - B1 takes A2 @ 103, 5/6 filled
 
-Book:
-[asks]
-105: A1(2)
-[bids]
-103: B1(1), B2(10), B3(1)
-#+end_src
+  Book:
+  [asks]
+  105: A1(2)
+  [bids]
+  103: B1(1), B2(10), B3(1)
+  #+end_src
 
 ** one cancel case
 
-#+begin_src
-Book: (empty)
+  #+begin_src
+  Book: (empty)
 
-Action: A1, sell 5 @ 110
+  Action: A1, sell 5 @ 110
 
-Book:
-[asks]
-110: A1(5)
+  Book:
+  [asks]
+  110: A1(5)
 
-Action: A2, sell 10 @ 110
+  Action: A2, sell 10 @ 110
 
-Book:
-[asks]
-110: A1(5), A2(10)
+  Book:
+  [asks]
+  110: A1(5), A2(10)
 
-Action: Cancel A1
+  Action: Cancel A1
 
-Book:
-[asks]
-110: A2(10)
+  Book:
+  [asks]
+  110: A2(10)
 
-Action: B1, buy 1 @ 110 (crosses)
+  Action: B1, buy 1 @ 110 (crosses)
 
-Matching:
-- B1 takes A2 @ 110, 1/10 filled
+  Matching:
+  - B1 takes A2 @ 110, 1/10 filled
 
-Book:
-[asks]
-110: A2(9)
-#+end_src
+  Book:
+  [asks]
+  110: A2(9)
+  #+end_src

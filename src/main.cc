@@ -3,14 +3,18 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
+#include <chrono>
 #include <cstdint>
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <thread>
+
+#include "types.h"
 
 namespace {
-enum class CLIMode { kSimulate = 0, kReplay };
-
 bool RequireValue(int i, int argc, std::string_view option) {
   if (i + 1 >= argc) {
     std::cerr << "Missing value for option: " << option << "\n";
@@ -53,7 +57,7 @@ void PrintHelp() {
 Central Limit Order Book with replay abilities
 
 Commands:
-  simulate		Generate plausible, but random events
+  simulate		Generate random events with random data
   replay		Ingest event log and show the final state
 
 Options:
@@ -61,8 +65,69 @@ Options:
   --input <path>			Read events from file path for replay
   --min-sim-sleep <milliseconds>	Minimum delay between simulated events (default: 10)
   --max-sim-sleep <milliseconds>	Maximum delay between simulated events (default: 1250)
+  --seed <number>			Use a specified seed when creating simulated events
   --help				Display this message and exit
 )";
+}
+
+enum class CLIMode { kSimulate = 0, kReplay };
+
+struct SimulationConfig {
+  std::string_view output_path;
+  uint32_t min_sim_sleep;
+  uint32_t max_sim_sleep;
+  uint32_t simulation_seed;
+};
+
+void StartSimulation(const SimulationConfig& config) {
+  srand(config.simulation_seed);
+
+  std::ofstream log_dest(config.output_path.begin(), std::ios::binary);
+  order_book_v1::OrderBook ob(&log_dest);
+
+  std::vector<order_book_v1::OrderId> potential_order_ids;
+  uint32_t runs = 0;
+  while (true) {
+    uint32_t sleep_ms =
+        rand() % (config.max_sim_sleep + 1 - config.min_sim_sleep) +
+        config.min_sim_sleep;
+    uint16_t user_rn = rand() % 1000;
+    uint8_t action_rn = rand() % 3;
+    uint8_t side_rn = rand() % 2;
+    order_book_v1::OrderSide side = side_rn == 0
+                                        ? order_book_v1::OrderSide::kBuy
+                                        : order_book_v1::OrderSide::kSell;
+    uint8_t qty_rn = rand() % 50 + 1;     // [1, 50]
+    uint8_t price_rn = rand() % 100 + 1;  // [1, 100]
+
+    if (action_rn == 0) {
+      auto result = ob.AddLimit(order_book_v1::UserId{user_rn}, side,
+                                order_book_v1::Price{price_rn},
+                                order_book_v1::Quantity{qty_rn},
+                                order_book_v1::TimeInForce::kGoodTillCancel);
+      potential_order_ids.push_back(result->order_id);
+    } else if (action_rn == 1) {
+      auto result = ob.AddMarket(order_book_v1::UserId{user_rn}, side,
+                                 order_book_v1::Quantity{qty_rn});
+    } else if (action_rn == 2) {
+      if (potential_order_ids.size() > 0) {
+        auto rand_idx = rand() % potential_order_ids.size();
+        ob.Cancel(potential_order_ids.at(rand_idx));
+        potential_order_ids.erase(potential_order_ids.begin() + rand_idx);
+      }
+    }
+
+    if (++runs % 10 == 0) {
+      std::cout << ob << std::endl;
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+  }
+}
+
+void StartReplay(std::string_view& input_path) {
+  (void)input_path;  // TODO: Remove
+  std::cout << "Not implemented" << std::endl;
 }
 }  // namespace
 
@@ -77,6 +142,7 @@ int main(int argc, char** argv) {
   std::string_view input_path;
   uint32_t min_sim_sleep = 10;
   uint32_t max_sim_sleep = 1250;
+  uint32_t simulation_seed = time(0);
 
   const std::string first = ToLowerAscii(argv[1]);
 
@@ -125,6 +191,13 @@ int main(int argc, char** argv) {
       if (!ParseUint32(argv[++i], arg, max_sim_sleep)) {
         return 2;
       }
+    } else if (arg == "--seed") {
+      if (!RequireValue(i, argc, arg)) {
+        return 2;
+      }
+      if (!ParseUint32(argv[++i], arg, simulation_seed)) {
+        return 2;
+      }
     } else if (!arg.empty() && arg.front() == '-') {
       std::cerr << "Unknown option: " << arg << "\n";
       return 1;
@@ -139,11 +212,16 @@ int main(int argc, char** argv) {
     return 2;
   }
 
-  std::cout << (mode == CLIMode::kSimulate ? "Simulate" : "Replay") << "\n";
-  std::cout << output_path << "\n";
-  std::cout << input_path << "\n";
-  std::cout << min_sim_sleep << "\n";
-  std::cout << max_sim_sleep << "\n";
+  if (mode == CLIMode::kSimulate) {
+    StartSimulation({
+        .output_path = output_path,
+        .min_sim_sleep = min_sim_sleep,
+        .max_sim_sleep = max_sim_sleep,
+        .simulation_seed = simulation_seed,
+    });
+  } else if (mode == CLIMode::kReplay) {
+    StartReplay(input_path);
+  }
 
   return 0;
 }

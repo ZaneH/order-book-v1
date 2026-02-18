@@ -75,12 +75,12 @@ class OrderBook {
 
   friend std::ostream& operator<<(std::ostream& os, const OrderBook& book) {
     os << "Book: ";
-    if (book.bids_.size() == 0 && book.asks_.size() == 0) {
+    if (book.bids_.empty() && book.asks_.empty()) {
       os << "(empty)";
       return os;
     }
 
-    if (book.bids_.size() > 0) {
+    if (!book.bids_.empty()) {
       os << "\n[bids]\n";
       for (const auto& [price, level] : book.bids_) {
         os << price.v << ": ";
@@ -91,7 +91,7 @@ class OrderBook {
       }
     }
 
-    if (book.asks_.size() > 0) {
+    if (!book.asks_.empty()) {
       os << "[asks]\n";
       for (const auto& [price, level] : book.asks_) {
         os << price.v << ": ";
