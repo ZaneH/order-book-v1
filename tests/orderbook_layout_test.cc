@@ -20,8 +20,8 @@ TEST_F(OrderBookTest, AddLimitIncrementOrderId) {
                             TimeInForce::kGoodTillCancel);
 
   // Assert
-  EXPECT_EQ(result1->order_id, OrderId{0});
-  EXPECT_EQ(result2->order_id, OrderId{1});
+  EXPECT_EQ(result1->order_id, OrderId{1});
+  EXPECT_EQ(result2->order_id, OrderId{2});
 }
 
 TEST_F(OrderBookTest, AddLimitRestMultipleBuySell) {

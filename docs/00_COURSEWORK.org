@@ -225,9 +225,9 @@ Start with text. You can always add binary later.
 This makes the repo pleasant to show someone.
 
 ** tasks
-- [ ] Add "dump book" debug output:
+- [X] Add "dump book" debug output:
   - print levels and FIFO order ids
-- [ ] Add a generator that creates random but valid event sequences:
+- [X] Add a generator that creates random but valid event sequences:
   - stable seed
   - can write a log
 - [ ] Add a fuzzer-ish invariant test:

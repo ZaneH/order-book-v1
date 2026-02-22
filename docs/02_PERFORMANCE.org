@@ -25,7 +25,7 @@
     Commit: https://github.com/ZaneH/order-book-v1/commit/d70141b416bae3df91e3b7f7e009ebe862b8c5fa
 
 *** unordered_map
-    During the first pass, I accepted the potential performance cost of using the STL's =unordered_map=. I have been made aware that Boost's equivalent may perform better and I intend to test and document the results during my second pass.
+    During the first pass, I accepted the potential performance cost of using =std::unordered_map=. I have been made aware that Boost's equivalent may perform better and I intend to test and document the results during my second pass.
 
 *** EventLog
 **** Buffered EventLog
@@ -38,3 +38,6 @@
 
 *** Heap Allocations in Hot Path
     During my first pass, I was more focused on correctness than avoiding heap allocations.
+
+** Resources
+   - [[https://www.youtube.com/watch?v=SzjJfKHygaQ][More Speed & Simplicity: Practical Data-Oriented Design in C++ - Vittorio Romeo - CppCon 2025]]
