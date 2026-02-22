@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "event_log.h"
+#include "hash.h"
 #include "order.h"
 #include "trade.h"
 #include "types.h"
@@ -72,6 +73,7 @@ class OrderBook {
   std::optional<Price> BestAsk() const;
 
   Quantity DepthAt(OrderSide side, Price price) const;
+  FixedWidth ToHash();
 
   friend std::ostream& operator<<(std::ostream& os, const OrderBook& book) {
     os << "Book:";

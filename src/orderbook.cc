@@ -281,6 +281,27 @@ bool OrderBook::Cancel(OrderId id) {
   return true;
 }
 
+FixedWidth OrderBook::ToHash() {
+  BookSide const& bids = bids_;
+  BookSide const& asks = asks_;
+  FixedWidth seed = HASH_SEED;
+
+  for (auto [price, level] : bids) {
+    for (auto order : level.orders) {
+      HashOrder(seed, order);
+    }
+    HashCombine(seed, level.aggregate_qty.v);
+  }
+  for (auto [price, level] : asks) {
+    for (auto order : level.orders) {
+      HashOrder(seed, order);
+    }
+    HashCombine(seed, level.aggregate_qty.v);
+  }
+
+  return seed;
+}
+
 #ifndef NDEBUG
 void VerifyAggregateQtyPerLevel(BookSide book_side) {
   for (auto const& [price, level] : book_side) {
