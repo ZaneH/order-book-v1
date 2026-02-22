@@ -1,7 +1,7 @@
 * Order Book V1
 See [[./docs/00_COURSEWORK.org][00_COURSEWORK.org]] for the project specs. Inspired by [[https://github.com/alissawu/miniex][alissawu/miniex]].
 
-This project uses the [[https://google.github.io/styleguide/cppguide.html][Google C++ Style Guide]].
+This project uses the [[https://google.github.io/styleguide/cppguide.html][Google C++ Style Guide]] and targets C++20.
 
 ** Build and Run
 

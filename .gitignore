@@ -68,5 +68,7 @@ vcpkg_installed/
 Testing/
 .cache/
 
+.jj/
+
 # output files
 *.clob
