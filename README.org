@@ -5,10 +5,17 @@ This project uses the [[https://google.github.io/styleguide/cppguide.html][Googl
 
 ** Build and Run
 
-#+begin_src sh
-  $ cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DCMAKE_BUILD_TYPE=Release # or Debug
-  $ cmake --build build
-  $ cd build
-  $ ctest # Run tests (add --verbose for more detail)
-  $ ./clob_cli # Simulation/Replay tool
-#+end_src
+   #+begin_src sh
+   $ cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DCMAKE_BUILD_TYPE=Release # or Debug
+   $ cmake --build build
+   $ cd build
+   $ ctest # Run tests (add --verbose for more detail)
+   $ ./clob_cli # Simulation/Replay tool
+   #+end_src
+
+** Run Benchmarks
+
+   #+BEGIN_SRC lang
+   $ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+   $ cmake --build build && ./build/orderbook_benchmark
+   #+END_SRC

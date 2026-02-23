@@ -32,6 +32,15 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+FetchContent_Declare(
+  googlebenchmark
+  GIT_REPOSITORY https://github.com/google/benchmark.git
+  GIT_TAG        192ef10025eb2c4cdd392bc502f0c852196baa48
+)
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googlebenchmark)
+
 enable_testing()
 
 add_executable(orderbook_test
@@ -53,6 +62,16 @@ target_link_libraries(orderbook_test
 
 include(GoogleTest)
 gtest_discover_tests(orderbook_test)
+
+add_executable(orderbook_benchmark
+  benchmark/limit_market.cc
+)
+
+target_link_libraries(orderbook_benchmark
+  PRIVATE
+  benchmark::benchmark
+  benchmark::benchmark_main
+)
 
 set(SAN_FLAGS
   -fsanitize=address,undefined
@@ -90,3 +109,4 @@ target_link_options(project_defaults
 target_link_libraries(clob_cli PRIVATE project_defaults tl_expected orderbook)
 target_link_libraries(orderbook PRIVATE project_defaults tl_expected)
 target_link_libraries(orderbook_test PRIVATE project_defaults tl_expected orderbook)
+target_link_libraries(orderbook_benchmark PRIVATE project_defaults tl_expected orderbook)

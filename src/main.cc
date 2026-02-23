@@ -172,7 +172,7 @@ int StartReplay(std::string_view& input_path) {
     std::istringstream str(line);
     std::string part;
 
-    order_book_v1::EventType type;
+    order_book_v1::EventType type = order_book_v1::EventType::kLimit;
 
     while (str >> part) {
       parts.push_back(part);
@@ -219,6 +219,7 @@ int StartReplay(std::string_view& input_path) {
 
   std::cout << "Final State:\n";
   std::cout << "====================\n";
+  std::cout << "Hash: " << ob.ToHash() << "\n";
   std::cout << ob;
   std::cout << "====================\n";
   return 0;
