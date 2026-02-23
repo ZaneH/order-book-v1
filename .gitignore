@@ -72,3 +72,6 @@ Testing/
 
 # output files
 *.clob
+
+# perf
+perf.data*

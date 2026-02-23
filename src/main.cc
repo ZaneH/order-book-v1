@@ -55,6 +55,7 @@ std::string ToLowerAscii(std::string text) {
 }
 
 void PrintHelp() {
+  // TODO: Add switch for max iterations in simulation
   std::cout << R"(Usage: clob <command> [<options>]
 Central Limit Order Book with replay abilities
 

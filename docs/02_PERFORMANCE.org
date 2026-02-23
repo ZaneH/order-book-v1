@@ -66,5 +66,19 @@
     BM_Cancel_Miss/5/10                           1212 ns         1203 ns       576704 miss_rate=1
     BM_Cancel_Miss/20/20                          5087 ns         5070 ns       137865 miss_rate=1
     #+END_SRC
+
+**** Perf & Flamegraph
+     All flamegraphs have been exported as SVGs. If you're viewing these on GitHub, I recommend you open the image in a new tab.
+
+     #+BEGIN_SRC sh
+     $ ./build/clob_cli simulate --min-price 0 --max-price 10 --min-quantity 0 --max-quantity 25 --min-sim-sleep 1 --max-sim-sleep 5 --output ./out.clob
+     $ perf record --call-graph dwarf ./build/clob_cli replay --input ./out.clob
+     $ flamegraph --perfdata perf.data
+     #+END_SRC
+
+     [[file:./images/first-run-fg.svg]]
+
+     As expected, most of the time is spent handling IO, specifically related to the =EventLog=. There are several options to reduce the time taken by =EventLog=, the easiest being to remove =std::endl= from =AppendEvent(...)=.
+     
 ** Resources
    - [[https://www.youtube.com/watch?v=SzjJfKHygaQ][More Speed & Simplicity: Practical Data-Oriented Design in C++ - Vittorio Romeo - CppCon 2025]]

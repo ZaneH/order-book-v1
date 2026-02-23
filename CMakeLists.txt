@@ -64,7 +64,7 @@ include(GoogleTest)
 gtest_discover_tests(orderbook_test)
 
 add_executable(orderbook_benchmark
-  benchmark/limit_market.cc
+  benchmark/limit_market_cancel.cc
 )
 
 target_link_libraries(orderbook_benchmark
