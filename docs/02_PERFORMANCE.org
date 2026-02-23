@@ -78,7 +78,8 @@
 
      [[file:./images/first-run-fg.svg]]
 
-     As expected, most of the time is spent handling IO, specifically related to the =EventLog=. There are several options to reduce the time taken by =EventLog=, the easiest being to remove =std::endl= from =AppendEvent(...)=.
+*** Optimizing
+     As expected, most of the time is spent handling IO, specifically related to the =EventLog=. I thought the simplest speed-up would come from removing =std::endl= from =AppendEvent(...)=. After making the change, it had a negligible impact.
      
 ** Resources
    - [[https://www.youtube.com/watch?v=SzjJfKHygaQ][More Speed & Simplicity: Practical Data-Oriented Design in C++ - Vittorio Romeo - CppCon 2025]]

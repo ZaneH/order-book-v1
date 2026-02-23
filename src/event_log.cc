@@ -36,7 +36,7 @@ EventLog::EventLog(std::ostream* dest) : dest_(dest) {}
 
 void EventLog::AppendEvent(const OrderBookEvent& event) {
   LoggedEvent record{.event_seq = event_seq_++, .event = event};
-  *dest_ << record << std::endl;
+  *dest_ << record << "\n";
 }
 
 uint32_t EventLog::event_seq() { return event_seq_; }

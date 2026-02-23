@@ -75,3 +75,4 @@ Testing/
 
 # perf
 perf.data*
+/flamegraph.svg
