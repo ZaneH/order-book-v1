@@ -43,20 +43,28 @@
     These are early benchmark numbers using the =Release= build. The full benchmark harness can be found in =benchmark/= in this repo.
 
     #+BEGIN_SRC sh
-    2026-02-22T19:39:21-05:00
-    Running ./build/orderbook_benchmark
-    Run on (16 X 3767.42 MHz CPU s)
+    Run on (16 X 3811.35 MHz CPU s)
     CPU Caches:
       L1 Data 32 KiB (x8)
       L1 Instruction 32 KiB (x8)
       L2 Unified 512 KiB (x8)
       L3 Unified 32768 KiB (x1)
-    Load Average: 1.34, 0.67, 0.51
-    ----------------------------------------------------------------------------
-    Benchmark                                  Time             CPU   Iterations
-    ----------------------------------------------------------------------------
-    PreppedOrdersFixture/AddLimit            264 ns          264 ns      2803326
-    PreppedOrderBookFixture/AddMarket        151 ns          150 ns      5250030
+    Load Average: 0.39, 0.27, 0.33
+    --------------------------------------------------------------------------------------------------
+    Benchmark                                        Time             CPU   Iterations UserCounters...
+    --------------------------------------------------------------------------------------------------
+    BM_AddLimit_Resting/5/10                      1318 ns         1312 ns       531362 reject_rate=0 trades_per_op=0
+    BM_AddLimit_Resting/20/20                     5399 ns         5385 ns       130229 reject_rate=0 trades_per_op=0
+    BM_AddLimit_CrossingImmediateFill/5/10        1351 ns         1347 ns       517030 trades_per_op=1
+    BM_AddLimit_CrossingImmediateFill/20/20       5239 ns         5224 ns       133669 trades_per_op=1
+    BM_AddMarket_FullFill/5/10                    1299 ns         1289 ns       540626 reject_rate=0 trades_per_op=1
+    BM_AddMarket_FullFill/20/20                   5195 ns         5176 ns       135259 reject_rate=0 trades_per_op=1
+    BM_AddMarket_PartialFill                       762 ns          768 ns       906385 remaining_qty_per_op=6 trades_per_op=1
+    BM_AddMarket_EmptyReject                       653 ns          662 ns      1056292 reject_rate=1
+    BM_Cancel_Hit/5/10                            1204 ns         1195 ns       585044 success_rate=1
+    BM_Cancel_Hit/20/20                           5050 ns         5032 ns       139080 success_rate=1
+    BM_Cancel_Miss/5/10                           1212 ns         1203 ns       576704 miss_rate=1
+    BM_Cancel_Miss/20/20                          5087 ns         5070 ns       137865 miss_rate=1
     #+END_SRC
 ** Resources
    - [[https://www.youtube.com/watch?v=SzjJfKHygaQ][More Speed & Simplicity: Practical Data-Oriented Design in C++ - Vittorio Romeo - CppCon 2025]]

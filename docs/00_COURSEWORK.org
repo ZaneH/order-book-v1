@@ -233,7 +233,7 @@ This makes the repo pleasant to show someone.
 - [ ] Add a fuzzer-ish invariant test:
   - run N random operations
   - after each op, call verify()
-- [ ] Add a benchmark harness (even if crude):
+- [X] Add a benchmark harness (even if crude):
   - ops/sec for add_limit non-crossing
   - ops/sec for cancel
   - ops/sec for a crossing workload
