@@ -5,7 +5,6 @@
 
 #include <cstdint>
 #include <initializer_list>
-#include <sstream>
 #include <string_view>
 
 #include "event_log.h"

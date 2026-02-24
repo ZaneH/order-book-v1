@@ -9,9 +9,10 @@
 #include <utility>
 
 namespace order_book_v1 {
-OrderBook::OrderBook(std::ostream* log_dest) : log_(EventLog{log_dest}) {}
+OrderBook::OrderBook(std::ostream* log_dst) : log_(EventLog{log_dst}) {}
 
 void OrderBook::EmitLimitOrderEvent(const Order& order) {
+  if (log_.dst_stream() == nullptr) return;
   log_.AppendEvent(AddLimitOrderEvent{
       .creator_id = order.creator_id,
       .side = order.side,
@@ -22,6 +23,7 @@ void OrderBook::EmitLimitOrderEvent(const Order& order) {
 }
 
 void OrderBook::EmitMarketOrderEvent(const Order& order) {
+  if (log_.dst_stream() == nullptr) return;
   log_.AppendEvent(AddMarketOrderEvent{
       .creator_id = order.creator_id,
       .side = order.side,
@@ -30,6 +32,7 @@ void OrderBook::EmitMarketOrderEvent(const Order& order) {
 }
 
 void OrderBook::EmitCancelEvent(OrderId id) {
+  if (log_.dst_stream() == nullptr) return;
   log_.AppendEvent(CancelOrderEvent{.order_id = id});
 }
 

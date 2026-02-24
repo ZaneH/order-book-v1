@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <ostream>
 #include <random>
 #include <sstream>
 #include <string>
@@ -135,7 +136,7 @@ void StartSimulation(const SimulationConfig& config) {
                                 order_book_v1::Price{price},
                                 order_book_v1::Quantity{qty}, tif);
       if (result.has_value()) {
-        past_ids.push_back(result->order_id);
+        past_ids.emplace_back(result->order_id);
       }
     } else if (action <= 80) {
       // 30% are Market orders
@@ -165,7 +166,8 @@ int StartReplay(std::string_view& input_path) {
     return 3;
   }
 
-  order_book_v1::OrderBook ob{};
+  std::ostringstream buf = std::ostringstream();
+  order_book_v1::OrderBook ob{&buf};
 
   std::string line;
   while (std::getline(log_file, line)) {
@@ -176,7 +178,7 @@ int StartReplay(std::string_view& input_path) {
     order_book_v1::EventType type = order_book_v1::EventType::kLimit;
 
     while (str >> part) {
-      parts.push_back(part);
+      parts.emplace_back(part);
 
       if (parts.size() == 2) {
         std::string type_part = parts.rbegin()->c_str();
@@ -217,6 +219,8 @@ int StartReplay(std::string_view& input_path) {
       ob.Cancel(order_book_v1::OrderId{order_id});
     }
   }
+
+  std::cout << buf.str() << "\n";
 
   std::cout << "Final State:\n";
   std::cout << "====================\n";

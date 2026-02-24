@@ -12,10 +12,8 @@ namespace order_book_v1 {
 struct AddLimitOrderEvent {
   UserId creator_id;
   OrderSide side;
-
   Quantity qty;
   std::optional<Price> price;
-
   std::optional<TimeInForce> tif;
 };
 
@@ -40,12 +38,14 @@ struct LoggedEvent {
 
 class EventLog {
  public:
-  EventLog(std::ostream* dest);
+  EventLog(std::ostream* dst);
+
+  std::ostream* dst_stream();
   void AppendEvent(const OrderBookEvent& event);
   uint32_t event_seq();
 
  private:
-  std::ostream* dest_;
+  std::ostream* dst_;
   uint32_t event_seq_ = 0;
 };
 }  // namespace order_book_v1

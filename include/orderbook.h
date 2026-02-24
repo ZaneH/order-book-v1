@@ -55,7 +55,7 @@ struct MatchResult {
 
 class OrderBook {
  public:
-  OrderBook(std::ostream* log_dest = &std::cout);
+  OrderBook(std::ostream* log_dst = nullptr);
 
   // Postconditions: FIFO preserved, empty levels removed, no crossed book
   AddResult AddLimit(UserId user_id, OrderSide side, Price price, Quantity qty,

@@ -2,8 +2,6 @@
 
 #include <gtest/gtest.h>
 
-#include <sstream>
-
 #include "event_log_test.h"
 
 namespace order_book_v1 {

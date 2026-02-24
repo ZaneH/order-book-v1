@@ -41,7 +41,7 @@ TEST_F(EventLogTest, InvalidLimitOrderEvent) {
   }});
 
   // Assert
-  std::string expected{"0 INVALID LIMIT ORDER\n"};
+  std::string expected{"0 INVALID_LIMIT_ORDER\n"};
   AssertOutput(expected);
   AssertEventSeq(1);
 }

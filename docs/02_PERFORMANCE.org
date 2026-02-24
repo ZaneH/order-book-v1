@@ -67,19 +67,30 @@
     BM_Cancel_Miss/20/20                          5087 ns         5070 ns       137865 miss_rate=1
     #+END_SRC
 
-**** Perf & Flamegraph
-     All flamegraphs have been exported as SVGs. If you're viewing these on GitHub, I recommend you open the image in a new tab.
+*** Perf & Flamegraph
+    All flamegraphs have been exported as SVGs. If you're viewing these on GitHub, I recommend you open the image in a new tab for a better viewing experience.
 
-     #+BEGIN_SRC sh
-     $ ./build/clob_cli simulate --min-price 0 --max-price 10 --min-quantity 0 --max-quantity 25 --min-sim-sleep 1 --max-sim-sleep 5 --output ./out.clob
-     $ perf record --call-graph dwarf ./build/clob_cli replay --input ./out.clob
-     $ flamegraph --perfdata perf.data
-     #+END_SRC
+    #+BEGIN_SRC sh
+    $ ./build/clob_cli simulate --min-price 0 --max-price 10 --min-quantity 0 --max-quantity 25 --min-sim-sleep 1 --max-sim-sleep 5 --output ./out.clob
+    $ perf record --call-graph dwarf ./build/clob_cli replay --input ./out.clob
+    $ flamegraph --perfdata perf.data
+    #+END_SRC
 
-     [[file:./images/first-run-fg.svg]]
+    [[file:./images/first-run-fg.svg]]
 
-*** Optimizing
-     As expected, most of the time is spent handling IO, specifically related to the =EventLog=. I thought the simplest speed-up would come from removing =std::endl= from =AppendEvent(...)=. After making the change, it had a negligible impact.
+** Second Pass
+*** Logging
+    As expected, most of the time is spent handling IO, specifically related to the =EventLog=. I thought the simplest speed-up would come from removing =std::endl= from =AppendEvent(...)= but after making the change, it had a negligible impact.
+
+    Looking closer, I noticed that many of the calls look like they're related to "tty" indicating to me that logging to the terminal was taking a significant amount of CPU time. To fix this, I edited the replay functionality to use an internal log until the end. The resulting flame graph looks much better from a performance standpoint. The core library functions (e.g. =AddLimit(...)=) are quite hard to spot now.
+
+    [[file:./images/replay-reduce-logging-fg.svg]]
      
+    The implementation of this change also enables the library consumer to ignore the logged events entirely. Doing so significantly reduces noise in the flame graph:
+
+    [[file:./images/replay-remove-logging-fg.svg]]
+
 ** Resources
    - [[https://www.youtube.com/watch?v=SzjJfKHygaQ][More Speed & Simplicity: Practical Data-Oriented Design in C++ - Vittorio Romeo - CppCon 2025]]
+     - Gave good recommendations for profiling tools (in the Q&A portion)
+     - Inspires new ways of thinking about data

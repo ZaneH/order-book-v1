@@ -10,7 +10,7 @@ std::ostream& WriteSpaceSep(std::ostream& os, const Args&... xs) {
 
 std::ostream& operator<<(std::ostream& os, const AddLimitOrderEvent& event) {
   if (!event.price.has_value() || !event.tif.has_value())
-    return os << "INVALID LIMIT ORDER";
+    return os << "INVALID_LIMIT_ORDER";
   WriteSpaceSep(os, "ADDLIMIT", event.creator_id, event.side, event.qty,
                 event.price.value(), event.tif.value());
   return os;
@@ -32,12 +32,13 @@ std::ostream& operator<<(std::ostream& os, const LoggedEvent& record) {
   return os;
 }
 
-EventLog::EventLog(std::ostream* dest) : dest_(dest) {}
+EventLog::EventLog(std::ostream* dst) : dst_(dst) {}
 
 void EventLog::AppendEvent(const OrderBookEvent& event) {
   LoggedEvent record{.event_seq = event_seq_++, .event = event};
-  *dest_ << record << "\n";
+  *dst_ << record << "\n";
 }
 
 uint32_t EventLog::event_seq() { return event_seq_; }
+std::ostream* EventLog::dst_stream() { return dst_; }
 }  // namespace order_book_v1

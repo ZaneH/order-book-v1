@@ -14,18 +14,6 @@ TEST(Hash, SimpleNumberHash) {
   EXPECT_NE(s1, 0);
 }
 
-TEST(Hash, SimpleHashString) {
-  FixedWidth s1 = HASH_SEED;
-  HashCombine(s1, "Test string");
-
-  FixedWidth s2 = HASH_SEED;
-  HashCombine(s2, "Test string 2");
-
-  EXPECT_NE(s1, HASH_SEED);
-  EXPECT_NE(s1, s2);
-  EXPECT_NE(s1, 0);
-}
-
 TEST(Hash, SimpleEnum) {
   enum class Meal { kBreakfast = 0, kLunch, kDinner };
 

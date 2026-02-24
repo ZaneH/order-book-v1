@@ -3,19 +3,19 @@ See [[./docs/00_COURSEWORK.org][00_COURSEWORK.org]] for the project specs. Inspi
 
 This project uses the [[https://google.github.io/styleguide/cppguide.html][Google C++ Style Guide]] and targets C++20.
 
-** Build and Run
+** Build, Test, and Run
 
    #+begin_src sh
-   $ cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DCMAKE_BUILD_TYPE=Release # or Debug
-   $ cmake --build build
-   $ cd build
-   $ ctest # Run tests (add --verbose for more detail)
+   $ # Replace "Debug" with "Release" for the release build
+   $ cmake -S . -B build/Debug -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DCMAKE_BUILD_TYPE=Debug
+   $ cmake --build build/Debug
+   $ ctest --test-dir build/Debug # Run tests (add --verbose for more detail)
    $ ./clob_cli # Simulation/Replay tool
    #+end_src
 
 ** Run Benchmarks
 
    #+BEGIN_SRC lang
-   $ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=1
-   $ cmake --build build && ./build/orderbook_benchmark
+   $ cmake -S . -B build/Release -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+   $ cmake --build build/Release && ./build/Release/orderbook_benchmark
    #+END_SRC
