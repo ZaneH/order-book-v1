@@ -14,6 +14,7 @@ This project uses the [[https://google.github.io/styleguide/cppguide.html][Googl
    #+end_src
 
 ** Run Benchmarks
+   Initial performance considerations and optimizations are documented in [[./docs/02_PERFORMANCE.org][02_PERFORMANCE.org]].
 
    #+BEGIN_SRC lang
    $ cmake -S . -B build/Release -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=1

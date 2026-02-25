@@ -77,3 +77,4 @@ Testing/
 perf.data*
 /flamegraph.svg
 /callgrind.out.*
+/heaptrack*

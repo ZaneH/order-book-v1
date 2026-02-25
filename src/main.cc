@@ -67,6 +67,7 @@ Commands:
 Options:
   --output <path>			Write events to a file path
   --input <path>			Read events from file path for replay
+  --max-sim-steps <number>		Maximum number of events to generate in simuluation
   --min-sim-sleep <milliseconds>	Minimum delay between simulated events (default: 10)
   --max-sim-sleep <milliseconds>	Maximum delay between simulated events (default: 1250)
   --min-price <number>			Minimum price for simulated limit orders (default: 1)
@@ -82,6 +83,7 @@ enum class CLIMode { kSimulate = 0, kReplay };
 
 struct SimulationConfig {
   std::string_view output_path;
+  uint32_t max_sim_steps;
   uint32_t min_sim_sleep;
   uint32_t max_sim_sleep;
   uint32_t min_price;
@@ -117,7 +119,8 @@ void StartSimulation(const SimulationConfig& config) {
   }
 
   std::vector<order_book_v1::OrderId> past_ids;
-  while (true) {
+  uint32_t iterations = 0;
+  while (config.max_sim_steps == 0 || iterations++ < config.max_sim_steps) {
     order_book_v1::OrderSide side = side_rn(rng) == 0
                                         ? order_book_v1::OrderSide::kBuy
                                         : order_book_v1::OrderSide::kSell;
@@ -240,6 +243,7 @@ int main(int argc, char** argv) {
   CLIMode mode = CLIMode::kSimulate;
   std::string_view output_path;
   std::string_view input_path;
+  uint32_t max_sim_steps = 0;
   uint32_t min_sim_sleep = 10;
   uint32_t max_sim_sleep = 1250;
   uint32_t min_price = 1;
@@ -281,6 +285,13 @@ int main(int argc, char** argv) {
         return 2;
       }
       input_path = argv[++i];
+    } else if (arg == "--max-sim-steps") {
+      if (!RequireValue(i, argc, arg)) {
+        return 2;
+      }
+      if (!ParseUint32(argv[++i], arg, max_sim_steps)) {
+        return 2;
+      }
     } else if (arg == "--min-sim-sleep") {
       if (!RequireValue(i, argc, arg)) {
         return 2;
@@ -353,6 +364,7 @@ int main(int argc, char** argv) {
   if (mode == CLIMode::kSimulate) {
     StartSimulation({
         .output_path = output_path,
+        .max_sim_steps = max_sim_steps,
         .min_sim_sleep = min_sim_sleep,
         .max_sim_sleep = max_sim_sleep,
         .min_price = min_price,
