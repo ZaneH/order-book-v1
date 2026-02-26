@@ -1,0 +1,25 @@
+name: Test
+on:
+  push:
+jobs:
+  test-project:
+    name: Test Project
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Build Project
+        uses: threeal/cmake-action@v2.1.0
+        with:
+          generator: Ninja
+          build-dir: build/Debug
+          options: |
+            CMAKE_BUILD_TYPE=Debug
+
+      - name: Test Project
+        uses: threeal/ctest-action@v1.1.0
+        with:
+          verbose: true
+          build-config: Debug
+          test-dir: build/Debug
