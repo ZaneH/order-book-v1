@@ -1,0 +1,146 @@
+# Performance
+
+## First Pass
+
+During the first pass of development, I had to make certain assumptions about performance without having benchmarks to
+justify these decisions. Here are the decisions I made during my first pass and the reasons for them.
+
+### Prefix or Postfix ++
+
+Using `++i` as opposed to `i++` is a well known optimization. It avoids 1 temporary copy and during my first pass, I
+used both.
+
+### Copy or Reference in Function Arguments
+
+```cpp
+void OrderBook::EmitCancelEvent(OrderId id) {
+  log_.AppendEvent(CancelOrderEvent{.order_id = id});
+}
+```
+
+In instances like this, it is not obvious whether copying the `OrderId` struct or passing a constant
+reference to it is more performant. A general rule of thumb is primitives (e.g. int, bool) and structures <=16 bytes
+should be copied and large structs or strings should use references or constant references.
+
+### Recursion
+
+In my first pass of the `Match(...)` function, I used recursion to handle the case of crossing over multiple levels. I
+immediately knew the implementation would need to be changed to be non-recursive because:
+
+1.  In my opinion, recursive functions are harder to read than loops.
+2.  It has been instilled in me that recursion grows the stack frame on each call. While most orders that cross levels
+    won\'t cross more than a few, this isn't guaranteed.
+
+While building this program, I learned that C++ compilers can perform "Tail Call Optimization" or TCO for short. In
+short: TCO can make recursive functions act more like looping ones, but only if the conditions are right. Instead of
+relying on TCO, refactoring any recursive functions into loops seems like the wiser choice, even if just to improve
+readability.
+
+Commit:
+<https://github.com/ZaneH/order-book-v1/commit/d70141b416bae3df91e3b7f7e009ebe862b8c5fa>
+
+### unordered\_map
+
+During the first pass, I accepted the potential performance cost of using `std::unordered_map`. I have been made aware
+that Boost's equivalent may perform better and I intend to test and document the results during my second pass.
+
+### EventLog
+
+1.  Buffered EventLog
+
+    The `EventLog` class is an append-only log that writes to `stdout` by default, or, if provided, outputs to a file.
+    During my first pass, I chose not to buffer the output, but instead to flush per-event. I'm pretty certain this
+    decision will have a considerable performance cost and I intend to benchmark and document my findings during my
+    second pass.
+
+    I chose not to buffer the output at first for simplicity sake.
+
+2.  Binary EventLog
+
+    For simplicity, I chose to use text to represent each event when writing the `EventLog`. This made
+    development easier, but will likely incur a higher performance cost when encoding/decoding the events compared to a
+    binary representation. I would like to come back and benchmark the two implementations. This one is a lower priority
+    for me.
+
+### Heap Allocations in Hot Path
+
+During my first pass, I was more focused on correctness than avoiding heap allocations.
+
+### Benchmarks
+
+These are early benchmark numbers using the `Release` build. The full benchmark harness can be found in
+`benchmark/` in this repo.
+
+```
+Run on (16 X 3811.35 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x8)
+  L1 Instruction 32 KiB (x8)
+  L2 Unified 512 KiB (x8)
+  L3 Unified 32768 KiB (x1)
+Load Average: 0.39, 0.27, 0.33
+--------------------------------------------------------------------------------------------------
+Benchmark                                        Time             CPU   Iterations UserCounters...
+--------------------------------------------------------------------------------------------------
+BM_AddLimit_Resting/5/10                      1318 ns         1312 ns       531362 reject_rate=0 trades_per_op=0
+BM_AddLimit_Resting/20/20                     5399 ns         5385 ns       130229 reject_rate=0 trades_per_op=0
+BM_AddLimit_CrossingImmediateFill/5/10        1351 ns         1347 ns       517030 trades_per_op=1
+BM_AddLimit_CrossingImmediateFill/20/20       5239 ns         5224 ns       133669 trades_per_op=1
+BM_AddMarket_FullFill/5/10                    1299 ns         1289 ns       540626 reject_rate=0 trades_per_op=1
+BM_AddMarket_FullFill/20/20                   5195 ns         5176 ns       135259 reject_rate=0 trades_per_op=1
+BM_AddMarket_PartialFill                       762 ns          768 ns       906385 remaining_qty_per_op=6 trades_per_op=1
+BM_AddMarket_EmptyReject                       653 ns          662 ns      1056292 reject_rate=1
+BM_Cancel_Hit/5/10                            1204 ns         1195 ns       585044 success_rate=1
+BM_Cancel_Hit/20/20                           5050 ns         5032 ns       139080 success_rate=1
+BM_Cancel_Miss/5/10                           1212 ns         1203 ns       576704 miss_rate=1
+BM_Cancel_Miss/20/20                          5087 ns         5070 ns       137865 miss_rate=1
+```
+
+### Perf & Flamegraph
+
+All flamegraphs have been exported as SVGs. If you're viewing these on GitHub, I recommend you open the image in a new
+tab for a better viewing experience.
+
+```bash
+$ ./build/clob_cli simulate --min-price 0 --max-price 10 --min-quantity 0 --max-quantity 25 --min-sim-sleep 1 --max-sim-sleep 5 --output ./out.clob
+$ perf record --call-graph dwarf ./build/clob_cli replay --input ./out.clob
+$ flamegraph --perfdata perf.data
+```
+
+![First run](./images/first-run-fg.svg)
+
+## Second Pass
+
+### Logging
+
+As expected, most of the time is spent handling IO, specifically related to the `EventLog`. I thought the simplest
+speed-up would come from removing `std::endl` from `AppendEvent(...)` but after making the change, it had a negligible
+impact.
+
+Looking closer, I noticed that many of the calls look like they\'re related to "tty" indicating to me that logging to
+the terminal was taking a significant amount of CPU time. To fix this, I edited the replay functionality to use an
+internal log until the end. The resulting flame graph looks much better from a performance standpoint. The core library
+functions (e.g. `AddLimit(...)`) are quite hard to spot now.
+
+![Reduced logging](./images/replay-reduce-logging-fg.svg)
+
+The implementation of this change also enables the library consumer to
+ignore the logged events entirely. Doing so significantly reduces noise
+in the flame graph:
+
+![Remove logging](./images/replay-remove-logging-fg.svg)
+
+As nice as this is, it only improves the performance in situations where
+logging is sent to the terminal. The microbenchmarks are identical. Time
+to see if we can do better...
+
+<!-- ### Allocations -->
+<!-- ### Cache Misses -->
+<!-- ### Branching -->
+<!-- ### Threads -->
+
+## Resources
+
+- [More Speed & Simplicity: Practical Data-Oriented Design in C++ - Vittorio Romeo - CppCon 2025](https://www.youtube.com/watch?v=SzjJfKHygaQ)
+  - Gave good recommendations for profiling tools (in the Q&A portion)
+  - Inspires new ways of thinking about data
