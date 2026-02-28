@@ -20,7 +20,6 @@ struct AddLimitOrderEvent {
 struct AddMarketOrderEvent {
   UserId creator_id;
   OrderSide side;
-
   Quantity qty;
 };
 

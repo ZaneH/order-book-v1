@@ -30,7 +30,7 @@ struct Handle {
   std::list<Order>::iterator order_it;
 };
 
-enum class RejectReason {
+enum class RejectReason : uint8_t {
   kBadPrice = 0,
   kBadQty,
   kOverflow,  // NOTE: Currently unused

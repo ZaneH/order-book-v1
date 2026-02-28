@@ -7,8 +7,8 @@
 #include <ostream>
 
 namespace order_book_v1 {
-enum class EventType { kLimit = 0, kMarket, kCancel };
-enum class OrderSide { kBuy = 0, kSell };
+enum class EventType : uint8_t { kLimit = 0, kMarket, kCancel };
+enum class OrderSide : uint8_t { kBuy = 0, kSell };
 std::ostream& operator<<(std::ostream& os, OrderSide const side);
 
 enum class TimeInForce {
@@ -78,7 +78,7 @@ using Quantity = StrongNum<QuantityTag>;
 using Ticks = StrongNum<TicksTag>;
 using Price = Ticks;
 
-enum class OrderStatus {
+enum class OrderStatus : uint8_t {
   kAwaitingFill = 0,
   kPartialFill,
   kImmediateFill,
